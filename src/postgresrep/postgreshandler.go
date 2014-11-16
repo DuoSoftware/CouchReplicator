@@ -6,149 +6,341 @@ import _ "pq"
 import "couchbase"
 import "strings"
 import "strconv"
-import "log"
+import "reflect"
+import "os"
 
-func InitialMigrationC2PG (dbname, user, password, host, couchHost, couchPool, couchBucket, couchViewName string) {
-	
+func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket, couchViewName, xmlPath string) {
+
+	file, _ := os.Create("loginsert.txt")
+	//getting table mappings
+	var tables = GetXMLData(xmlPath, file)
+
 	fmt.Println("Connecting to the couch")
-		client, err := couchbase.Connect("http://"+couchHost+":8091/")
-		if(err != nil){
-			fmt.Println("couch connection error : "+err.Error());
-			log.Fatal(err)
-		}
-		
-		pool, err := client.GetPool(couchPool)
-		if(err != nil){
-			fmt.Println("couch connection error : "+err.Error());
-			log.Fatal(err)
-		}
-		
-		bucket, err := pool.GetBucket(couchBucket)
-		if(err != nil){
-			fmt.Println("couch get bucket error : "+err.Error());
-			log.Fatal(err)
-		}
-		
-		skipCount := 0
-		res, err := bucket.View(couchViewName, couchViewName, map[string]interface{}{
-				    "stale": false,
-				    "limit": 1,
-				    "skip": 0,
-				    })
-		
-		if(err != nil){
-			fmt.Println("couch bucket view : "+err.Error());
-			log.Fatal(err)
-		}
-		
-		totalCouchRows := res.TotalRows 
-		fmt.Println("Number of rows : "+ strconv.Itoa(totalCouchRows))
-		
-		var f interface{}
-		
-		db, err := sql.Open("postgres", "postgres://"+user+":"+password+"@"+host+"/"+dbname+"?sslmode=disable")
-	
-		if err != nil {
-			fmt.Println("Postgres connectivity error : "+err.Error())
-			log.Fatal(err)
-		}
-		
-		fmt.Println("Connected to postgres database "+dbname +" with user "+user)
-		
-		for skipCount <= totalCouchRows {
-	        
-	        res, err := bucket.View(couchViewName, couchViewName, map[string]interface{}{
-				    "stale": false,
-				    "limit": 5000,
-				    "skip": skipCount,
-				    })
+	file.WriteString("Connecting to the couch" + "\n")
+	client, err := couchbase.Connect("http://" + couchHost + ":8091/")
+	if err != nil {
+		fmt.Println("couch connection error : " + err.Error() + "\n")
+		file.WriteString(err.Error() + "\n")
+	}
 
-			if err != nil {
-					fmt.Println("Couch bucket view error : "+err.Error())
-					log.Fatal(err)
-				}			
-	        
-	        for i := 0; i < 5000 ; i++ {
-				fmt.Println("Getting value for key :"+res.Rows[i].ID)							
-				
-				bucket.Get(res.Rows[i].ID,&f)
-				
-				// Inserting account informations
-				if(strings.Contains(res.Rows[i].ID,"duosoftware.subscriber.subscribermanagment.domainmodel.sms_accountinformation")){						
-						m := f.(map[string]interface{})	
-						var x float64 = m["AccountNo"].(float64)
-						var accountInt int = int(x)
-						result,err := db.Exec("INSERT INTO sms_accountinformation(guaccountid, accountno, gupromotionid, gudealerid, gucustid, accountclass, accountcategory, accounttype, status, createdate, displayaccountno, companyid, tenantid, viewobjectid) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)",m["GUAccountID"],accountInt,m["GUPromotionID"],m["GUDealerID"],m["GUCustID"],m["AccountClass"],m["AccountCategory"],m["AccountType"],m["Status"],m["CreateDate"],m["DisplayAccountNo"],1,3,0)
-						if(err != nil){
-							fmt.Println("Postgres insertion error : "+err.Error())
-						}else{
-							fmt.Println(result.RowsAffected())
+	file.WriteString("Getting couch pool " + "\n")
+	pool, err := client.GetPool(couchPool)
+	if err != nil {
+		fmt.Println("couch connection error : " + err.Error() + "\n")
+		file.WriteString(err.Error() + "\n")
+	}
+
+	file.WriteString("Getting couch bucket " + "\n")
+	bucket, err := pool.GetBucket(couchBucket)
+	if err != nil {
+		fmt.Println("couch get bucket error : " + err.Error() + "\n")
+		file.WriteString(err.Error() + "\n")
+	}
+
+	file.WriteString("Getting couch view " + "\n")
+	skipCount := 0
+	res, err := bucket.View(couchViewName, couchViewName, map[string]interface{}{
+		"stale": false,
+		"limit": 1,
+		"skip":  0,
+	})
+
+	if err != nil {
+		fmt.Println("couch bucket view : " + err.Error() + "\n")
+		file.WriteString(err.Error() + "\n")
+	}
+
+	totalCouchRows := res.TotalRows
+	fmt.Println("Number of rows : " + strconv.Itoa(totalCouchRows))
+	file.WriteString("Number of rows : " + strconv.Itoa(totalCouchRows) + "\n")
+
+	var f interface{}
+
+	file.WriteString("Connecting to postgres" + "\n")
+	db, err := sql.Open("postgres", "postgres://"+user+":"+password+"@"+host+"/"+dbname+"?sslmode=disable")
+
+	if err != nil {
+		fmt.Println("Postgres connectivity error : " + err.Error() + "\n")
+		file.WriteString(err.Error() + "\n")
+	}
+
+	fmt.Println("Connected to postgres database " + dbname + " with user " + user)
+
+	for skipCount <= totalCouchRows {
+
+		file.WriteString("Getting couch data" + "\n")
+		res, err := bucket.View(couchViewName, couchViewName, map[string]interface{}{
+			"stale": false,
+			"limit": 5000,
+			"skip":  skipCount,
+		})
+
+		if err != nil {
+			fmt.Println("Couch bucket view error : " + err.Error() + "\n")
+			file.WriteString(err.Error() + "\n")
+		} else {
+			file.WriteString("Got couch data" + "\n")
+		}
+
+		for i := 0; i < 5000; i++ {
+
+			fmt.Println("Getting value for key :" + res.Rows[i].ID)
+			file.WriteString("Getting value for key :" + res.Rows[i].ID + "\n")
+
+			bucket.Get(res.Rows[i].ID, &f)
+
+			for _, table := range tables.Tables {
+				file.WriteString("Iterating tables " + "\n")
+				if strings.Contains(res.Rows[i].ID, table.CouchName) {
+
+					file.WriteString("Iterating table couch " + table.CouchName + "\n")
+					var insertQuery = table.PGInsert
+					m := f.(map[string]interface{})
+					file.WriteString("Iterating change coumns " + "\n")
+					for _, prop := range table.PGChange {
+						file.WriteString("Iterating change coumn " + prop.ColumnName + "\n")
+						var propValue = m[prop.ColumnName]
+						var accountInt int64
+						if reflect.TypeOf(propValue).Kind() == reflect.Float64 {
+							accountInt = int64(m[prop.ColumnName].(float64))
+							stringVal := strconv.FormatInt(accountInt, 10)
+							insertQuery = strings.Replace(insertQuery, prop.ColumnName+"_", stringVal, 100)
 						}
-						
-					}else if(strings.Contains(res.Rows[i].ID,"duosoftware.subscriber.subscribermasters.profile")){ // inserting profile informations
-						m := f.(map[string]interface{})
-						
-						var profileId float64 = m["ProfileID"].(float64)
-						var profileIdInt int64 = int64(profileId)
-						
-						var guAddressIdInt int64 = 0
-						if(m["GUAddressID"] != nil){
-							var guAddressId float64 = m["GUAddressID"].(float64)
-							guAddressIdInt = int64(guAddressId)
-						}
-						
-						var guBillingIdInt int64 = 0
-						if(m["GUBillingID"] != nil){
-							var guBillingId float64 = m["GUBillingID"].(float64)
-							guBillingIdInt = int64(guBillingId)
-						}
-						
-						var guInstallationIdInt int64 = 0
-						if(m["GUInstallationID"] != nil){
-							var guInstallationId float64 = m["GUInstallationID"].(float64)
-							guInstallationIdInt = int64(guInstallationId)
-						}
-						
-						result,err := db.Exec("INSERT INTO sms_profile(profileid, profilecode, profileclass, profiletype, gender, firstname, secondname, lastname, title, phonenumber, mobilenumber, faxnumber, vatregno, email, country, guaddressid, gubillingid, guinstallationid) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)",profileIdInt, m["ProfileCode"], m["ProfileClass"], m["ProfileType"], m["Gender"], m["FirstName"], m["SecondName"], m["LastName"], m["Title"], m["Phonenumber"], m["Mobilenumber"], m["FaxNumber"], m["VatRegNo"], m["EMail"], m["Country"], guAddressIdInt, guBillingIdInt, guInstallationIdInt)
-						if(err != nil){
-							fmt.Println("Postgres insertion error : "+err.Error())
-						}else{
-							fmt.Println(result.RowsAffected())
-						}
-					}else if(strings.Contains(res.Rows[i].ID,"duosoftware.subscriber.billingmanagment.accountledger")){ // inserting account ledger
-						m := f.(map[string]interface{})
-						
-						var recordStatusInt int64 = 0
-						if(m["RecordStatus"] != nil){
-							var recordStatus float64 = m["RecordStatus"].(float64)
-							recordStatusInt = int64(recordStatus)
-						}
-						
-						var tranTypeInt int64 = 0
-						if(m["TranType"] != nil){
-							var tranType float64 = m["TranType"].(float64)
-							tranTypeInt = int64(tranType)
-						}
-						
-						var ledgerIdInt int64 = 0
-						if(m["LedgerID"] != nil){
-							var ledgerId float64 = m["LedgerID"].(float64)
-							ledgerIdInt = int64(ledgerId)
-						}
-						
-						result,err := db.Exec("INSERT INTO sms_accountledger(balance, billed, refno, ledgercode, recordstatus, currencycode, createuser, trandate, refid, guaccountid, ledgerid, transactiontype, trantype, description, amount) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)",m["Balance"], m["Billed"], m["RefNo"], m["ledgerCode"], recordStatusInt, m["CurrencyCode"], m["CreateUser"], m["TranDate"], m["RefID"], m["GuAccountID"], ledgerIdInt, m["TransactionType"], tranTypeInt, m["Description"], m["Amount"])
-						if(err != nil){
-							fmt.Println("Postgres insertion error : "+err.Error())
-						}else{
-							fmt.Println(result.RowsAffected())
-						}
-					}else{
-						fmt.Println("skipped")
+
 					}
-        	}
-	        
-	        fmt.Println(strconv.Itoa(skipCount) +" data migrated")
-	        skipCount += 5000
-	    }
+
+					insertQuery = strings.Replace(insertQuery, "quote_", "\"", 100)
+
+					for k, v := range m {
+						if reflect.TypeOf(v).Kind() == reflect.Float64 {
+							var floatId float64 = v.(float64)
+							var profileIdInt int64 = int64(floatId)
+							str := strconv.FormatInt(profileIdInt, 10)
+							insertQuery = strings.Replace(insertQuery, k, str, 100)
+							file.WriteString(k + " -- " + reflect.TypeOf(v).Kind().String() + "\n")
+						} else if reflect.TypeOf(v).Kind() == reflect.Int {
+							var intId int = v.(int)
+							str := strconv.Itoa(intId)
+							insertQuery = strings.Replace(insertQuery, k, str, 100)
+							file.WriteString(k + " -- " + reflect.TypeOf(v).Kind().String() + "\n")
+						} else if reflect.TypeOf(v).Kind() == reflect.String {
+							str := v.(string)
+							insertQuery = strings.Replace(insertQuery, k, str, 100)
+							file.WriteString(k + " -- " + reflect.TypeOf(v).Kind().String() + "\n")
+						} else if reflect.TypeOf(v).Kind() == reflect.Bool {
+							var boolVal bool = v.(bool)
+							str := strconv.FormatBool(boolVal)
+							insertQuery = strings.Replace(insertQuery, k, str, 100)
+							file.WriteString(k + " -- " + reflect.TypeOf(v).Kind().String() + "\n")
+						} else if reflect.TypeOf(v).Kind() == reflect.Slice {
+							if v != nil {
+								file.WriteString(k + " -- " + reflect.TypeOf(v).Kind().String() + "\n")
+								var stringVal string
+								var stringSlice string
+								s := reflect.ValueOf(v)
+								for i := 0; i < s.Len(); i++ {
+
+									if reflect.ValueOf(s.Index(i).Interface()).Kind() == reflect.Float64 {
+										var floatId float64 = s.Index(i).Interface().(float64)
+										var tempInt int64 = int64(floatId)
+										stringSlice = strconv.FormatInt(tempInt, 10)
+									} else if reflect.ValueOf(s.Index(i).Interface()).Kind() == reflect.Int {
+										var intId int = s.Index(i).Interface().(int)
+										stringSlice = strconv.Itoa(intId)
+									} else if reflect.ValueOf(s.Index(i).Interface()).Kind() == reflect.String {
+										stringSlice = s.Index(i).Interface().(string)
+									} else if reflect.ValueOf(s.Index(i).Interface()).Kind() == reflect.Int64 {
+										var intId int64 = s.Index(i).Interface().(int64)
+										stringSlice = strconv.FormatInt(intId, 10)
+									}
+
+									if i == 0 {
+										stringVal = stringVal + stringSlice
+									} else {
+										stringVal = stringVal + "," + stringSlice
+									}
+								}
+								
+								insertQuery = strings.Replace(insertQuery, k, stringVal, 100)
+
+							} else {
+								insertQuery = strings.Replace(insertQuery, k, "", 100)
+							}
+						} else {
+							file.WriteString(k + " -- " + reflect.TypeOf(v).Kind().String() + "\n")
+						}
+					}
+
+					file.WriteString(insertQuery)
+					result, err := db.Exec(insertQuery)
+					fmt.Println(insertQuery)
+					if err != nil {
+						fmt.Println("Postgres insertion error : " + err.Error())
+						file.WriteString(err.Error() + "\n")
+					} else {
+
+						fmt.Println(result.RowsAffected())
+					}
+				}
+			}
+
+			fmt.Println(strconv.Itoa(skipCount) + " data migrated")
+			file.WriteString(strconv.Itoa(skipCount) + " data migrated" + "\n")
+			skipCount += 5000
+		}
+
+		file.Close()
+	}
 }
 
+//func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket, couchGetBucket, couchViewName, xmlPath string) {
+//
+//	file, _ := os.Create("logupdate.txt")
+//	//getting table mappings
+//	var tables = GetXMLData(xmlPath, file)
+//
+//	fmt.Println("Connecting to the couch")
+//	file.WriteString("Connecting to the couch" + "\n")
+//	client, err := couchbase.Connect("http://" + couchHost + ":8091/")
+//	if err != nil {
+//		fmt.Println("couch connection error : " + err.Error() + "\n")
+//		file.WriteString(err.Error() + "\n")
+//	}
+//
+//	file.WriteString("Getting couch pool " + "\n")
+//	pool, err := client.GetPool(couchPool)
+//	if err != nil {
+//		fmt.Println("couch connection error : " + err.Error() + "\n")
+//		file.WriteString(err.Error() + "\n")
+//	}
+//
+//	file.WriteString("Getting couch bucket " + "\n")
+//	bucket, err := pool.GetBucket(couchBucket)
+//	if err != nil {
+//		fmt.Println("couch get bucket error : " + err.Error() + "\n")
+//		file.WriteString(err.Error() + "\n")
+//	}
+//
+//	file.WriteString("Getting couch bucket 2" + "\n")
+//	bucketGet, err := pool.GetBucket(couchGetBucket)
+//	if err != nil {
+//		fmt.Println("couch get bucket 2 error : " + err.Error() + "\n")
+//		file.WriteString(err.Error() + "\n")
+//	}
+//
+//	file.WriteString("Getting couch view " + "\n")
+//	skipCount := 0
+//	res, err := bucket.View(couchViewName, couchViewName, map[string]interface{}{
+//		"stale": false,
+//		"limit": 1,
+//		"skip":  0,
+//	})
+//
+//	if err != nil {
+//		fmt.Println("couch bucket view : " + err.Error() + "\n")
+//		file.WriteString(err.Error() + "\n")
+//	}
+//
+//	totalCouchRows := res.TotalRows
+//	fmt.Println("Number of rows : " + strconv.Itoa(totalCouchRows))
+//	file.WriteString("Number of rows : " + strconv.Itoa(totalCouchRows) + "\n")
+//
+//	var f interface{}
+//
+//	file.WriteString("Connecting to postgres" + "\n")
+//	db, err := sql.Open("postgres", "postgres://"+user+":"+password+"@"+host+"/"+dbname+"?sslmode=disable")
+//
+//	if err != nil {
+//		fmt.Println("Postgres connectivity error : " + err.Error() + "\n")
+//		file.WriteString(err.Error() + "\n")
+//	}
+//
+//	fmt.Println("Connected to postgres database " + dbname + " with user " + user)
+//
+//	for skipCount <= totalCouchRows {
+//
+//		file.WriteString("Getting couch data" + "\n")
+//		res, err := bucket.View(couchViewName, couchViewName, map[string]interface{}{
+//			"stale": false,
+//			"limit": 5000,
+//			"skip":  skipCount,
+//		})
+//
+//		if err != nil {
+//			fmt.Println("Couch bucket view error : " + err.Error() + "\n")
+//			file.WriteString(err.Error() + "\n")
+//		} else {
+//			file.WriteString("Got couch data" + "\n")
+//		}
+//
+//		for i := 0; i < 5000; i++ {
+//
+//			fmt.Println("Getting value for key :" + res.Rows[i].ID)
+//			file.WriteString("Getting value for key :" + res.Rows[i].ID + "\n")
+//			fmt.Println(res.Rows[i].Doc)
+//
+//			doc, _ := *(res.Rows[i].Doc).(map[string]interface{})
+//
+//			fmt.Println(doc["ID"])
+//			bucketGet.Get(doc["ID"], &f)
+//
+//			for _, table := range tables.Tables {
+//				file.WriteString("Iterating tables " + "\n")
+//				if strings.Contains(res.Rows[i].ID, table.CouchName) {
+//
+//					file.WriteString("Iterating table couch " + table.CouchName + "\n")
+//					var updateQuery = table.PGUpdate
+//					m := f.(map[string]interface{})
+//					file.WriteString("Iterating change coumns " + "\n")
+//					for _, prop := range table.PGChange {
+//						file.WriteString("Iterating change coumn " + prop.ColumnName + "\n")
+//						var propValue = m[prop.ColumnName]
+//						var accountInt int64
+//						if reflect.TypeOf(propValue).Kind() == reflect.Float64 {
+//							accountInt = int64(m[prop.ColumnName].(float64))
+//							stringVal := strconv.FormatInt(accountInt, 10)
+//							updateQuery = strings.Replace(updateQuery, prop.ColumnName+"_", stringVal, 100)
+//						}
+//
+//					}
+//
+//					updateQuery = strings.Replace(updateQuery, "quote_", "\"", 100)
+//
+//					for k, v := range m {
+//						if reflect.TypeOf(v).Kind() == reflect.Float64 {
+//							var floatId float64 = v.(float64)
+//							var profileIdInt int64 = int64(floatId)
+//							str := strconv.FormatInt(profileIdInt, 10)
+//							updateQuery = strings.Replace(updateQuery, k, str, 100)
+//						} else if reflect.TypeOf(v).Kind() == reflect.Int {
+//							var intId int = v.(int)
+//							str := strconv.Itoa(intId)
+//							updateQuery = strings.Replace(updateQuery, k, str, 100)
+//						} else if reflect.TypeOf(v).Kind() == reflect.String {
+//							str := v.(string)
+//							updateQuery = strings.Replace(updateQuery, k, str, 100)
+//						}
+//					}
+//
+//					file.WriteString(updateQuery)
+//					result, err := db.Exec(updateQuery)
+//					fmt.Println(updateQuery)
+//					if err != nil {
+//						fmt.Println("Postgres update error : " + err.Error())
+//						file.WriteString(err.Error() + "\n")
+//					} else {
+//
+//						fmt.Println(result.RowsAffected())
+//					}
+//				}
+//
+//			}
+//		}
+//
+//		fmt.Println(strconv.Itoa(skipCount) + " data update")
+//		file.WriteString(strconv.Itoa(skipCount) + " data update" + "\n")
+//		skipCount += 5000
+//	}
+//
+//	file.Close()
+//}
