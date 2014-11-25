@@ -9,7 +9,9 @@ import "strconv"
 import "reflect"
 import "os"
 
-func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket, couchViewName, xmlPath string) {
+//import "regexp"
+
+func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket, couchViewName, xmlPath, enableDelete string) {
 
 	file, _ := os.Create("loginsert.txt")
 	//getting table mappings
@@ -104,9 +106,10 @@ func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, co
 						var insertQuery = table.PGInsert
 						//file.WriteString("Iterating change columns " + "\n")
 						for _, prop := range table.PGChange {
-							//file.WriteString("Iterating change coumn " + prop.ColumnName + "\n")
+							//file.WriteString("Iterating change column " + prop.ColumnName + "\n")
 							var propValue = m[prop.ColumnName]
 							var accountInt int64
+
 							if reflect.TypeOf(propValue).Kind() == reflect.Float64 {
 								accountInt = int64(m[prop.ColumnName].(float64))
 								stringVal := strconv.FormatInt(accountInt, 10)
@@ -115,78 +118,54 @@ func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, co
 
 						}
 
-						//file.WriteString("Iterating change columns finished " + "\n")
+						for _, nested := range table.NestedColumn {
+							var strArray = []string{}
+							strArray = strings.Split(nested.ColumnName, ".")
+							if len(strArray) == 3 {
+								index, _ := strconv.Atoi(strArray[1])
+								nestedValue := m[strArray[0]].([]interface{})[index].(map[string]interface{})[strArray[2]]
 
-						insertQuery = strings.Replace(insertQuery, "quote_", "\"", 100)
+								if nested.Fixed == 1 {
+									if reflect.TypeOf(nestedValue).Kind() == reflect.Float64 {
+										accountInt := int64(nestedValue.(float64))
+										stringVal := strconv.FormatInt(accountInt, 10)
+
+										insertQuery = strings.Replace(insertQuery, "@"+nested.ColumnName, stringVal, -1)
+									}
+								} else {
+									insertQuery = strings.Replace(insertQuery, "@"+nested.ColumnName, GetStringValue(nestedValue), -1)
+								}
+
+							} else if len(strArray) == 2 {
+								index, _ := strconv.Atoi(strArray[1])
+								nestedValue := m[strArray[0]].([]interface{})[index]
+
+								if reflect.TypeOf(nestedValue).Kind() == reflect.Float64 {
+									accountInt := int64(nestedValue.(float64))
+									stringVal := strconv.FormatInt(accountInt, 10)
+									insertQuery = strings.Replace(insertQuery, "@"+nested.ColumnName, stringVal, -1)
+								} else {
+									insertQuery = strings.Replace(insertQuery, "@"+nested.ColumnName, GetStringValue(nestedValue), -1)
+								}
+
+							}
+
+						}
 
 						for k, v := range m {
 
 							if v != nil {
-
-								if reflect.TypeOf(v).Kind() == reflect.Float64 {
-									var floatId float64 = v.(float64)
-									var profileIdInt int64 = int64(floatId)
-									str := strconv.FormatInt(profileIdInt, 10)
-									insertQuery = strings.Replace(insertQuery, k, str, 100)
-									//file.WriteString(k + " -- " + reflect.TypeOf(v).Kind().String() + "\n")
-								} else if reflect.TypeOf(v).Kind() == reflect.Int {
-									var intId int = v.(int)
-									str := strconv.Itoa(intId)
-									insertQuery = strings.Replace(insertQuery, k, str, 100)
-									//file.WriteString(k + " -- " + reflect.TypeOf(v).Kind().String() + "\n")
-								} else if reflect.TypeOf(v).Kind() == reflect.String {
-									str := v.(string)
-									insertQuery = strings.Replace(insertQuery, k, str, 100)
-									//file.WriteString(k + " -- " + reflect.TypeOf(v).Kind().String() + "\n")
-								} else if reflect.TypeOf(v).Kind() == reflect.Bool {
-									var boolVal bool = v.(bool)
-									str := strconv.FormatBool(boolVal)
-									insertQuery = strings.Replace(insertQuery, k, str, 100)
-									//file.WriteString(k + " -- " + reflect.TypeOf(v).Kind().String() + "\n")
-								} else if reflect.TypeOf(v).Kind() == reflect.Slice {
-									if v != nil {
-										//file.WriteString(k + " -- " + reflect.TypeOf(v).Kind().String() + "\n")
-										var stringVal string
-										var stringSlice string
-										s := reflect.ValueOf(v)
-										for i := 0; i < s.Len(); i++ {
-
-											if reflect.ValueOf(s.Index(i).Interface()).Kind() == reflect.Float64 {
-												var floatId float64 = s.Index(i).Interface().(float64)
-												var tempInt int64 = int64(floatId)
-												stringSlice = strconv.FormatInt(tempInt, 10)
-											} else if reflect.ValueOf(s.Index(i).Interface()).Kind() == reflect.Int {
-												var intId int = s.Index(i).Interface().(int)
-												stringSlice = strconv.Itoa(intId)
-											} else if reflect.ValueOf(s.Index(i).Interface()).Kind() == reflect.String {
-												stringSlice = s.Index(i).Interface().(string)
-											} else if reflect.ValueOf(s.Index(i).Interface()).Kind() == reflect.Int64 {
-												var intId int64 = s.Index(i).Interface().(int64)
-												stringSlice = strconv.FormatInt(intId, 10)
-											}
-
-											if i == 0 {
-												stringVal = stringVal + stringSlice
-											} else {
-												stringVal = stringVal + "," + stringSlice
-											}
-										}
-
-										insertQuery = strings.Replace(insertQuery, k, stringVal, 100)
-
-									} else {
-										insertQuery = strings.Replace(insertQuery, k, "", 100)
-									}
-								} else {
-									//file.WriteString(k + " -- " + reflect.TypeOf(v).Kind().String() + "\n")
-								}
+								insertQuery = strings.Replace(insertQuery, "@"+k, GetStringValue(v), -1)
 							} else {
-								insertQuery = strings.Replace(insertQuery, k, "", 100)
+								insertQuery = strings.Replace(insertQuery, "@"+k, "", -1)
 							}
 						}
 
-						//file.WriteString(insertQuery)
+						fmt.Println(insertQuery)
 						result, err := db.Exec(insertQuery)
+						if enableDelete == "true" {
+							bucket.Delete(res.Rows[i].ID)
+						}
 						fmt.Println(insertQuery)
 						if err != nil {
 							fmt.Println("Postgres insertion error : " + err.Error())
@@ -215,11 +194,11 @@ func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, co
 		skipCount += len(res.Rows)
 		file.Close()
 	}
-	
+
 	db.Close()
 }
 
-func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket, couchGetBucket, couchViewName, xmlPath string) (err error) {
+func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket, couchGetBucket, couchViewName, xmlPath, enableDelete string) (err error) {
 
 	file, _ := os.Create("logupdate.txt")
 	//getting table mappings
@@ -285,7 +264,7 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 
 	for skipCount < totalCouchRows {
 
-		file.WriteString("Getting couch data skip " +strconv.Itoa(skipCount)+ "\n")
+		file.WriteString("Getting couch data skip " + strconv.Itoa(skipCount) + "\n")
 		res, err := bucket.View(couchViewName, couchViewName, map[string]interface{}{
 			"stale": false,
 			"limit": 5000,
@@ -297,10 +276,10 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 			file.WriteString(err.Error() + "\n")
 		} else {
 			file.WriteString("Got couch data" + strconv.Itoa(len(res.Rows)))
-		}		
-		
+		}
+
 		for i := 0; i < len(res.Rows); i++ {
-			
+
 			updateId := reflect.ValueOf(res.Rows[0].Value).Interface().(map[string]interface{})["ID"].(string)
 			updateType := reflect.ValueOf(res.Rows[0].Value).Interface().(map[string]interface{})["Type"].(string)
 			bucketGet.Get(updateId, &f)
@@ -338,78 +317,52 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 
 							}
 
-							//file.WriteString("Iterating change columns finished " + "\n")
+							for _, nested := range table.NestedColumn {
+								var strArray = []string{}
+								strArray = strings.Split(nested.ColumnName, ".")
+								if len(strArray) == 3 {
+									index, _ := strconv.Atoi(strArray[1])
+									nestedValue := m[strArray[0]].([]interface{})[index].(map[string]interface{})[strArray[2]]
 
-							insertQuery = strings.Replace(insertQuery, "quote_", "\"", 100)
+									if nested.Fixed == 1 {
+										if reflect.TypeOf(nestedValue).Kind() == reflect.Float64 {
+											accountInt := int64(nestedValue.(float64))
+											stringVal := strconv.FormatInt(accountInt, 10)
+											insertQuery = strings.Replace(insertQuery, "@"+nested.ColumnName, stringVal, -1)
+										}
+									} else {
+										insertQuery = strings.Replace(insertQuery, "@"+nested.ColumnName, GetStringValue(nestedValue), -1)
+									}
+
+								} else if len(strArray) == 2 {
+									index, _ := strconv.Atoi(strArray[1])
+									nestedValue := m[strArray[0]].([]interface{})[index]
+
+									if reflect.TypeOf(nestedValue).Kind() == reflect.Float64 {
+										accountInt := int64(nestedValue.(float64))
+										stringVal := strconv.FormatInt(accountInt, 10)
+										insertQuery = strings.Replace(insertQuery, "@"+nested.ColumnName, stringVal, -1)
+									} else {
+										insertQuery = strings.Replace(insertQuery, "@"+nested.ColumnName, GetStringValue(nestedValue), -1)
+									}
+
+								}
+
+							}
 
 							for k, v := range m {
 
 								if v != nil {
-
-									if reflect.TypeOf(v).Kind() == reflect.Float64 {
-										var floatId float64 = v.(float64)
-										var profileIdInt int64 = int64(floatId)
-										str := strconv.FormatInt(profileIdInt, 10)
-										insertQuery = strings.Replace(insertQuery, k, str, 100)
-										//file.WriteString(k + " -- " + reflect.TypeOf(v).Kind().String() + "\n")
-									} else if reflect.TypeOf(v).Kind() == reflect.Int {
-										var intId int = v.(int)
-										str := strconv.Itoa(intId)
-										insertQuery = strings.Replace(insertQuery, k, str, 100)
-										//file.WriteString(k + " -- " + reflect.TypeOf(v).Kind().String() + "\n")
-									} else if reflect.TypeOf(v).Kind() == reflect.String {
-										str := v.(string)
-										insertQuery = strings.Replace(insertQuery, k, str, 100)
-										//file.WriteString(k + " -- " + reflect.TypeOf(v).Kind().String() + "\n")
-									} else if reflect.TypeOf(v).Kind() == reflect.Bool {
-										var boolVal bool = v.(bool)
-										str := strconv.FormatBool(boolVal)
-										insertQuery = strings.Replace(insertQuery, k, str, 100)
-										//file.WriteString(k + " -- " + reflect.TypeOf(v).Kind().String() + "\n")
-									} else if reflect.TypeOf(v).Kind() == reflect.Slice {
-										if v != nil {
-											//file.WriteString(k + " -- " + reflect.TypeOf(v).Kind().String() + "\n")
-											var stringVal string
-											var stringSlice string
-											s := reflect.ValueOf(v)
-											for i := 0; i < s.Len(); i++ {
-
-												if reflect.ValueOf(s.Index(i).Interface()).Kind() == reflect.Float64 {
-													var floatId float64 = s.Index(i).Interface().(float64)
-													var tempInt int64 = int64(floatId)
-													stringSlice = strconv.FormatInt(tempInt, 10)
-												} else if reflect.ValueOf(s.Index(i).Interface()).Kind() == reflect.Int {
-													var intId int = s.Index(i).Interface().(int)
-													stringSlice = strconv.Itoa(intId)
-												} else if reflect.ValueOf(s.Index(i).Interface()).Kind() == reflect.String {
-													stringSlice = s.Index(i).Interface().(string)
-												} else if reflect.ValueOf(s.Index(i).Interface()).Kind() == reflect.Int64 {
-													var intId int64 = s.Index(i).Interface().(int64)
-													stringSlice = strconv.FormatInt(intId, 10)
-												}
-
-												if i == 0 {
-													stringVal = stringVal + stringSlice
-												} else {
-													stringVal = stringVal + "," + stringSlice
-												}
-											}
-
-											insertQuery = strings.Replace(insertQuery, k, stringVal, 100)
-
-										} else {
-											insertQuery = strings.Replace(insertQuery, k, "", 100)
-										}
-									} else {
-										//file.WriteString(k + " -- " + reflect.TypeOf(v).Kind().String() + "\n")
-									}
+									insertQuery = strings.Replace(insertQuery, "@"+k, GetStringValue(v), -1)
 								} else {
-									insertQuery = strings.Replace(insertQuery, k, "", 100)
+									insertQuery = strings.Replace(insertQuery, "@"+k, "", -1)
 								}
 							}
 
-							//file.WriteString(insertQuery)
 							result, err := db.Exec(insertQuery)
+							if enableDelete == "true" {
+								bucket.Delete(res.Rows[i].ID)
+							}
 							fmt.Println(insertQuery)
 							if err != nil {
 								fmt.Println("Postgres insertion error : " + err.Error())
@@ -454,28 +407,53 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 
 						}
 
-						updateQuery = strings.Replace(updateQuery, "quote_", "\"", 100)
+						for _, nested := range table.NestedColumn {
+							var strArray = []string{}
+							strArray = strings.Split(nested.ColumnName, ".")
+							if len(strArray) == 3 {
+								index, _ := strconv.Atoi(strArray[1])
+								nestedValue := m[strArray[0]].([]interface{})[index].(map[string]interface{})[strArray[2]]
+
+								if nested.Fixed == 1 {
+									if reflect.TypeOf(nestedValue).Kind() == reflect.Float64 {
+										accountInt := int64(nestedValue.(float64))
+										stringVal := strconv.FormatInt(accountInt, 10)
+										updateQuery = strings.Replace(updateQuery, "@"+nested.ColumnName, stringVal, -1)
+									}
+								} else {
+									updateQuery = strings.Replace(updateQuery, "@"+nested.ColumnName, GetStringValue(nestedValue), -1)
+								}
+
+							} else if len(strArray) == 2 {
+								index, _ := strconv.Atoi(strArray[1])
+								nestedValue := m[strArray[0]].([]interface{})[index]
+
+								if reflect.TypeOf(nestedValue).Kind() == reflect.Float64 {
+									accountInt := int64(nestedValue.(float64))
+									stringVal := strconv.FormatInt(accountInt, 10)
+									updateQuery = strings.Replace(updateQuery, "@"+nested.ColumnName, stringVal, -1)
+								} else {
+									updateQuery = strings.Replace(updateQuery, "@"+nested.ColumnName, GetStringValue(nestedValue), -1)
+								}
+
+							}
+
+						}
 
 						for k, v := range m {
+
 							if v != nil {
-								if reflect.TypeOf(v).Kind() == reflect.Float64 {
-									var floatId float64 = v.(float64)
-									var profileIdInt int64 = int64(floatId)
-									str := strconv.FormatInt(profileIdInt, 10)
-									updateQuery = strings.Replace(updateQuery, k, str, 100)
-								} else if reflect.TypeOf(v).Kind() == reflect.Int {
-									var intId int = v.(int)
-									str := strconv.Itoa(intId)
-									updateQuery = strings.Replace(updateQuery, k, str, 100)
-								} else if reflect.TypeOf(v).Kind() == reflect.String {
-									str := v.(string)
-									updateQuery = strings.Replace(updateQuery, k, str, 100)
-								}
+								updateQuery = strings.Replace(updateQuery, "@"+k, GetStringValue(v), -1)
+							} else {
+								updateQuery = strings.Replace(updateQuery, "@"+k, "", -1)
 							}
 						}
 
 						//file.WriteString(updateQuery)
 						result, err := db.Exec(updateQuery)
+						if enableDelete == "true" {
+							bucket.Delete(res.Rows[i].ID)
+						}
 						fmt.Println(updateQuery)
 						if err != nil {
 							fmt.Println("Postgres update error : " + err.Error())
@@ -483,12 +461,12 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 						} else {
 							status, ok := result.RowsAffected()
 							if ok == nil {
-									fmt.Println("Migrate status of key " + updateId + " is " + strconv.FormatInt(status, 10))
-									file.WriteString("Migrate status of key " + updateId + " is " + strconv.FormatInt(status, 10))
-								} else {
-									fmt.Println("Migrate status of key " + updateId + " is " + ok.Error())
-									file.WriteString("Migrate status of key " + updateId + " is " + ok.Error())
-								}
+								fmt.Println("Migrate status of key " + updateId + " is " + strconv.FormatInt(status, 10))
+								file.WriteString("Migrate status of key " + updateId + " is " + strconv.FormatInt(status, 10))
+							} else {
+								fmt.Println("Migrate status of key " + updateId + " is " + ok.Error())
+								file.WriteString("Migrate status of key " + updateId + " is " + ok.Error())
+							}
 						}
 					}
 

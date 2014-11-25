@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Tables>
+  <Table>
+    <PGName>tmp_accountinformation</PGName>
+    <CouchName>duosoftware.subscriber.subscribermanagment.domainmodel.sms_accountinformation</CouchName>
+    <PGInsert>INSERT INTO tmp_accountinformation(guaccountid, accountno, gupromotionid, gudealerid, gucustid, accountclass, accountcategory, accounttype, status, createdate, displayaccountno, companyid, tenantid, viewobjectid) VALUES ('GUAccountID','AccountNo_','GUPromotionID','GUDealerID','GUCustID','AccountClass','AccountCategory','AccountType','Status','CreateDate','DisplayAccountNo',CompanyID,TenantID,ViewObjectID)</PGInsert>
+    <PGUpdate>UPDATE tmp_accountinformation set gupromotionid = 'GUPromotionID',gudealerid='GUDealerID',gucustid='GUCustID',accountclass='AccountClass',accountcategory='AccountCategory', accounttype='AccountType', status='Status', displayaccountno = 'DisplayAccountNo' WHERE guaccountid = 'GUAccountID'</PGUpdate>
+    <PGDelete>delete</PGDelete>
+    <PGChange>
+        <ColumnName>AccountNo</ColumnName>
+    </PGChange>
+  </Table>
+  <Table>
+    <PGName>tmp_profile</PGName>
+    <CouchName>duosoftware.subscriber.subscribermasters.profile</CouchName>
+    <PGInsert>INSERT INTO tmp_profile(profileid, profilecode, profileclass, profiletype, gender, firstname, secondname, lastname, title, phonenumber, mobilenumber, faxnumber, vatregno, email, country, guaddressid, gubillingid, guinstallationid) VALUES ('ProfileID_', 'ProfileCode', 'ProfileClass', 'ProfileType', 'Gender', 'FirstName', 'SecondName', 'LastName', 'Title', 'Phonenumber', 'Mobilenumber', 'FaxNumber', 'VatRegNo', 'EMail', 'Country', 'GUAddressID_', 'GUBillingID_', 'GUInstallationID_')</PGInsert>
+    <PGUpdate>UPDATE tmp_profile SET profilecode = 'ProfileCode',profileclass = 'ProfileClass', profiletype = 'ProfileType',gender = 'Gender',firstname = 'FirstName', secondname = 'SecondName', lastname = 'LastName', title = 'Title', phonenumber = 'Phonenumber', mobilenumber = 'Mobilenumber', faxnumber = 'FaxNumber', vatregno = 'VatRegNo', email = 'EMail', country = 'Country', guaddressid = 'GUAddressID_', gubillingid = 'GUBillingID_', guinstallationid = 'GUInstallationID_' WHERE profileid = 'ProfileID_'</PGUpdate>
+    <PGDelete>delete</PGDelete>
+    <PGChange>
+      <ColumnName>ProfileID</ColumnName>
+    </PGChange>
+    <PGChange>
+      <ColumnName>GUAddressID</ColumnName>
+    </PGChange>
+    <PGChange>
+      <ColumnName>GUBillingID</ColumnName>
+    </PGChange>
+    <PGChange>
+      <ColumnName>GUInstallationID</ColumnName>
+    </PGChange>
+  </Table>
+  <Table>
+    <PGName>tmp_accountledger</PGName>
+    <CouchName>duosoftware.subscriber.billingmanagment.accountledger</CouchName>
+    <PGInsert>INSERT INTO tmp_accountledger(balance, billed, refno, ledgercode, recordstatus, currencycode, createuser, trandate, refid, guaccountid, ledgerid, transactiontype, trantype, description, amount) VALUES (Balance, 'Billed', RefNo, 'ledgerCode', RecordStatus_, 'CurrencyCode', 'CreateUser', 'TranDate', 'RefID', 'GuAccountID', LedgerID_, 'TransactionType', TranType, 'Description', Amount)</PGInsert>
+    <PGUpdate>UPDATE tmp_accountledger SET balance = Balance, billed = 'Billed', refno = RefNo, ledgercode = 'ledgerCode', recordstatus = RecordStatus_, currencycode = 'CurrencyCode', createuser = 'CreateUser', trandate = 'TranDate', refid = 'RefID', guaccountid = 'GuAccountID', transactiontype = 'TransactionType', trantype = TranType, description = 'Description', amount = Amount WHERE ledgerid = LedgerID_</PGUpdate>
+    <PGDelete>delete</PGDelete>
+    <PGChange>
+      <ColumnName>RecordStatus</ColumnName>
+    </PGChange>
+    <PGChange>
+      <ColumnName>TranType</ColumnName>
+    </PGChange>
+    <PGChange>
+      <ColumnName>LedgerID</ColumnName>
+    </PGChange>
+  </Table>
+  <Table>
+    <PGName>tmp_cdrdetail</PGName>
+    <CouchName>generatereportdataobjstore.classes.callrelatedinfo</CouchName>
+    <PGInsert>INSERT INTO tmp_cdrdetail(class, type, category, sessionid, phonenumber, inittime, ivrtime, queuetime, ringtime, talktime, holdtime, holdcount, starttime, endtime, acwtime, resource, skills, callanswered, callqueued, direction, companyid, tenantid, viewobjectid) VALUES ('Class', 'Type', 'Category', 'SessionId', 'PhoneNumber', 'InitTime', 'IvrTime', 'QueueTime', 'RingTime', 'TalkTime', 'HoldTime', 'HoldCount', 'StartTime', 'EndTime', 'AcwTime', 'Agent', 'Skills', 'CallAnswered', 'CallQueued', 'Direction', Company, Tenant, ViewObjectId)</PGInsert>
+    <PGUpdate>UPDATE tmp_cdrdetail SET class = 'Class', type = 'Type', category = 'Category', phonenumber = 'PhoneNumber', inittime = 'InitTime', ivrtime = 'IvrTime', queuetime = 'QueueTime', ringtime = 'RingTime', talktime = 'TalkTime', holdtime = 'HoldTime', holdcount = 'HoldCount', starttime = 'StartTime', endtime = 'EndTime', acwtime = 'AcwTime', resource = 'Agent', skills = 'Skills', callanswered = 'CallAnswered', callqueued = 'CallQueued', direction = 'Direction' WHERE sessionid = 'SessionId'</PGUpdate>
+    <PGDelete>delete</PGDelete>
+  </Table>
+  <Table>
+    <PGName>ord_entitlement</PGName>
+    <CouchName>duosoftware.subscriber.ordermanagment.order</CouchName>
+    <PGInsert>INSERT INTO ord_entitlement(guorderid) VALUES('@OrderDetails.0.GUOrderID')</PGInsert>
+    <PGUpdate>UPDATE ord_entitlement set guaccountid = '@OrderDetails.0.GUPromtionID' WHERE guorderid = '@GUOrderID'</PGUpdate>
+    <PGDelete>delete</PGDelete>
+    <NestedColumn>
+        <ColumnName>OrderDetails.0.GUPromtionID</ColumnName>
+		<Fixed>0</Fixed>
+    </NestedColumn>
+	<NestedColumn>
+        <ColumnName>OrderDetails.0.GUOrderID</ColumnName>
+		<Fixed>0</Fixed>
+    </NestedColumn>
+  </Table>
+  <Table>
+    <PGName>bil_receiptheader</PGName>
+    <CouchName>duosoftware.subscriber.billingmanagment.receiptsheader</CouchName>
+    <PGInsert>INSERT INTO bil_receiptheader(gurecid, reciptno, guaccountid, recipttype, status, tax, paidamount, paymethode, reciptdate, advancedno, canceldate, canceluser, createdate, createuser, companyid, tenantid, viewobjectid) VALUES ('GURecID','ReciptNo','GUAccountID','ReciptType','Status','TAX','PaidAmount','PayMethode','ReciptDate','AdvancedNo','CancelDate','CancelUser','CreateDate','CreateUser','CompanyID','TenantID','ViewObjectID')</PGInsert>
+    <PGUpdate>UPDATE bil_receiptheader SET guaccountid = 'GUAccountID', recipttype = 'ReciptType', status = 'Status', tax = 'TAX', paidamount = 'PaidAmount', paymethode = 'PayMethode', reciptdate = 'ReciptDate', advancedno = 'AdvancedNo', canceldate = 'CancelDate', canceluser = 'CancelUser', createdate = 'CreateDate', createuser = 'CreateUser',  companyid = CompanyID, tenantid = TenantID, viewobjectid = ViewObjectID WHERE gurecid = 'GURecID'</PGUpdate>
+    <PGDelete>delete</PGDelete>
+  </Table>
+  <Table>
+    <PGName>bil_attribute</PGName>
+    <CouchName>duosoftware.subscriber.billingmanagment.receiptsheader</CouchName>
+    <PGInsert>INSERT INTO bil_attribute(gurefid, attribute, module, value) VALUES ('GURefID', 'Attribute', 'Module', 'Value')</PGInsert>
+    <PGUpdate>UPDATE bil_attribute SET attribute = 'Attribute', module = 'Module', value = 'Value' WHERE gurefid = 'GURefID'</PGUpdate>
+    <PGDelete>delete</PGDelete>
+  </Table>
+  <Table>
+    <PGName>sms_productpackagemaster</PGName>
+    <CouchName>duosoftware.subscriber.subscribermasters.productpackagemaster</CouchName>
+    <PGInsert>INSERT INTO sms_productpackagemaster(guproductpkgid, class, type, category, code, description, operationalstatus, printdescription, retailprice, createuser, createdate, gusupplierid, companyid, tenantid, viewobjectid) VALUES ('GUProductPkgID', 'Class', 'Type', 'Category', 'Code', 'Description', 'OperationalStatus', 'PrintDescription', 'RetailPrice', 'CreateUser', 'CreateDate', 'GUSupplierID', CompanyID, TenantID, ViewObjectID)</PGInsert>
+    <PGUpdate>UPDATE sms_productpackagemaster SET class = 'Class', type = 'Type', category = 'Category', code = 'Code', description = 'Description', operationalstatus = OperationalStatus, printdescription = 'PrintDescription', retailprice = 'RetailPrice', createuser = 'CreateUser', createdate = 'CreateDate', gusupplierid = 'GUSupplierID', companyid = CompanyID, tenantid = TenantID, viewobjectid = ViewObjectID WHERE guproductpkgid = 'GUProductPkgID'</PGUpdate>
+    <PGDelete>delete</PGDelete>
+  </Table>
+  <Table>
+    <PGName>cas_smsdetails</PGName>
+    <CouchName>frameworkserver.chatlogger.nosqldomainmodel.chat_session</CouchName>
+    <PGInsert>INSERT INTO cas_smsdetails(datetime, originatingno, terminatingno, message, refid, companyid, tenantid, viewobjectid) VALUES ('DateTime', 'From', 'To', 'Message', 'ID', CompanyID, TenantID, ViewObjectID)</PGInsert>
+    <PGUpdate>UPDATE cas_smsdetails SET datetime = 'DateTime', originatingno = 'From', terminatingno = 'To', message = 'Message' WHERE refid = 'ID'</PGUpdate>
+    <PGDelete>delete</PGDelete>
+  </Table>
+</Tables>

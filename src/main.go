@@ -4,8 +4,8 @@ import "fmt"
 import "postgresrep"
 
 func main() {
-
-	var DB, User, Password, Host, CouchHost, CouchPool, CouchBucketInsert, CouchBucketUpdate, CouchViewInsert, CouchViewUpdate, XMLPath, Option string
+	
+	var DB, User, Password, Host, CouchHost, CouchPool, CouchBucketInsert, CouchBucketUpdate, CouchViewInsert, CouchViewUpdate, XMLPath, Option, EnableDelete string
 
 	fmt.Print("Postgres database name : ")
 	fmt.Scanf("%s\n", &DB)
@@ -51,22 +51,25 @@ func main() {
 	fmt.Scanf("%s\n", &XMLPath)
 	fmt.Println()
 
+	fmt.Print("Enable delete from update bucket : ")
+	fmt.Scanf("%s\n", &EnableDelete)
+
 	fmt.Println("1 : InitialMigration")
 	fmt.Println("2 : Updates")
-	fmt.Println("2 : Continuous Update")
+	fmt.Println("3 : Continuous Update")
 	fmt.Scanf("%s\n", &Option)
 
 	if Option == "1" {
-		postgresrep.InitialMigrationC2PG(DB, User, Password, Host, CouchHost, CouchPool, CouchBucketInsert, CouchViewInsert, XMLPath)
+		postgresrep.InitialMigrationC2PG(DB, User, Password, Host, CouchHost, CouchPool, CouchBucketInsert, CouchViewInsert, XMLPath, EnableDelete)
 	} else if Option == "2" {
-		err := postgresrep.UpdateC2PG(DB, User, Password, Host, CouchHost, CouchPool, CouchBucketUpdate, CouchBucketInsert, CouchViewUpdate, XMLPath)
+		err := postgresrep.UpdateC2PG(DB, User, Password, Host, CouchHost, CouchPool, CouchBucketUpdate, CouchBucketInsert, CouchViewUpdate, XMLPath, EnableDelete)
 		if err != nil {
 			fmt.Println(err.Error())
 		}
 	} else if Option == "3" {
 		continueUpdate := true
 		for continueUpdate == true {
-			err := postgresrep.UpdateC2PG(DB, User, Password, Host, CouchHost, CouchPool, CouchBucketUpdate, CouchBucketInsert, CouchViewUpdate, XMLPath)
+			err := postgresrep.UpdateC2PG(DB, User, Password, Host, CouchHost, CouchPool, CouchBucketUpdate, CouchBucketInsert, CouchViewUpdate, XMLPath, EnableDelete)
 			if err != nil {
 				fmt.Println(err.Error())
 			}

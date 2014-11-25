@@ -16,6 +16,17 @@ import "os"
 			PGChange []PGChange `xml:PGChange`
 		}
 	
+	type NestedColumn struct{
+			XMLName xml.Name `xml:NestedColumn`
+			ColumnName string `xml:ColumnName`
+			Fixed	int `xml:Fixed`
+		}
+	
+	type NestedColumns struct{
+		XMLName xml.Name `xml:NestedColumns`
+		NestedColumn []NestedColumn `xml:NestedColumn`
+	}
+	
 	type Table struct{
 			XMLName	xml.Name `xml:"Table"`
 			PGName	string	`xml:"PGName"`
@@ -24,6 +35,7 @@ import "os"
 			PGUpdate	string	`xml:"PGUpdate"`
 			PGDelete	string	`xml:"PGDelete"`
 			PGChange []PGChange `xml:PGChange`
+			NestedColumn []NestedColumn	`xml:NestedColumn`
 		}
 	
 	type Tables struct{
