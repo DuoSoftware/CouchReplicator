@@ -7,7 +7,9 @@ func GetStringValue(v interface{}) (value string) {
 
 	var str string
 
-	if reflect.TypeOf(v).Kind() == reflect.Float64 {
+	if(v == nil){
+		str = ""
+	}else if reflect.TypeOf(v).Kind() == reflect.Float64 {
 		var floatId float64 = v.(float64)
 		str = strconv.FormatFloat(floatId, 'f', 2, 32)
 

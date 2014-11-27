@@ -98,13 +98,13 @@ func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, co
 
 				for _, table := range tables.Tables {
 					//file.WriteString("Iterating table table.CouchName " + "\n")
+					fmt.Println("Iterating table " + table.CouchName +"\n")
 					if strings.Contains(res.Rows[i].ID, table.CouchName) {
 
 						m := f.(map[string]interface{})
 
-						//file.WriteString("Iterating table couch " + table.CouchName + "\n")
 						var insertQuery = table.PGInsert
-						//file.WriteString("Iterating change columns " + "\n")
+						//fmt.Println("Iterating change columns " + "\n")
 						for _, prop := range table.PGChange {
 							//file.WriteString("Iterating change column " + prop.ColumnName + "\n")
 							var propValue = m[prop.ColumnName]
@@ -117,9 +117,11 @@ func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, co
 							}
 
 						}
-
+						
+						fmt.Println("Iterating nested columns " + "\n")
 						for _, nested := range table.NestedColumn {
 							var strArray = []string{}
+							//fmt.Println("Iterating nested column " + nested.ColumnName +"\n")
 							strArray = strings.Split(nested.ColumnName, ".")
 							if len(strArray) == 3 {
 								index, _ := strconv.Atoi(strArray[1])
@@ -163,9 +165,6 @@ func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, co
 
 						fmt.Println(insertQuery)
 						result, err := db.Exec(insertQuery)
-						if enableDelete == "true" {
-							bucket.Delete(res.Rows[i].ID)
-						}
 						fmt.Println(insertQuery)
 						if err != nil {
 							fmt.Println("Postgres insertion error : " + err.Error())
