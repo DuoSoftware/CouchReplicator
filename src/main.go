@@ -6,67 +6,73 @@ import "redis"
 import "time"
 
 func main() {
+		
+	var DB, User, Password, Host, CouchHost, CouchPool, CouchBucketInsert, CouchBucketUpdate, CouchViewInsert, CouchViewUpdate, XMLPath, Option, EnableDelete, RedisIP, RedisPasswd string
+	var WaitTime,RedisDB int
 
-	var DB, User, Password, Host, CouchHost, CouchPool, CouchBucketInsert, CouchBucketUpdate, CouchViewInsert, CouchViewUpdate, XMLPath, Option, EnableDelete, RedisIP, RedisDB, RedisPasswd string
-
-	fmt.Print("Postgres database name : ")
+	fmt.Print("Postgres database name(ReportDB) : ")
 	fmt.Scanf("%s\n", &DB)
 	fmt.Println()
 
-	fmt.Print("Postgres user name : ")
+	fmt.Print("Postgres user name(postgres) : ")
 	fmt.Scanf("%s\n", &User)
 	fmt.Println()
 
-	fmt.Print("Postgres password : ")
+	fmt.Print("Postgres password(password) : ")
 	fmt.Scanf("%s\n", &Password)
 	fmt.Println()
 
-	fmt.Print("Postgres database host : ")
+	fmt.Print("Postgres database host(10.10.10.10) : ")
 	fmt.Scanf("%s\n", &Host)
 	fmt.Println()
 
-	fmt.Print("Couch host name : ")
+	fmt.Print("Couch host name(10.10.10.11) : ")
 	fmt.Scanf("%s\n", &CouchHost)
 	fmt.Println()
 
-	fmt.Print("Couch pool name : ")
+	fmt.Print("Couch pool name(default) : ")
 	fmt.Scanf("%s\n", &CouchPool)
 	fmt.Println()
 
-	fmt.Print("Couch bucket name for insert : ")
+	fmt.Print("Couch bucket name for insert(BucketInsert) : ")
 	fmt.Scanf("%s\n", &CouchBucketInsert)
 	fmt.Println()
 
-	fmt.Print("Couch bucket name for update : ")
+	fmt.Print("Couch bucket name for update(BucketUpdate) : ")
 	fmt.Scanf("%s\n", &CouchBucketUpdate)
 	fmt.Println()
 
-	fmt.Print("Couch view name for insert: ")
+	fmt.Print("Couch view name for insert(report) : ")
 	fmt.Scanf("%s\n", &CouchViewInsert)
 	fmt.Println()
 
-	fmt.Print("Couch view name for update: ")
+	fmt.Print("Couch view name for update(report) : ")
 	fmt.Scanf("%s\n", &CouchViewUpdate)
 	fmt.Println()
 
-	fmt.Print("XML Path: ")
+	fmt.Print("XML Path(c:\\pg.xml) : ")
 	fmt.Scanf("%s\n", &XMLPath)
 	fmt.Println()
 
-	fmt.Print("Redis DB: ")
-	fmt.Scanf("%s\n", &RedisDB)
+	fmt.Print("Redis DB(0) : ")
+	fmt.Scanf("%d\n", &RedisDB)
 	fmt.Println()
 
-	fmt.Print("Redis IP: ")
+	fmt.Print("Redis IP(tcp:10.10.10.12:6379) : ")
 	fmt.Scanf("%s\n", &RedisIP)
 	fmt.Println()
 
-	fmt.Print("Redis Password: ")
+	fmt.Print("Redis Password(password): ")
 	fmt.Scanf("%s\n", &RedisPasswd)
 	fmt.Println()
 
-	fmt.Print("Enable delete from update bucket : ")
+	fmt.Print("Enable delete from update bucket(true/false) : ")
 	fmt.Scanf("%s\n", &EnableDelete)
+	fmt.Println()
+	
+	fmt.Print("Update status checking wait time(in seconds - 10) : ")
+	fmt.Scanf("%d\n", &WaitTime)
+	fmt.Println()
 
 	fmt.Println("1 : InitialMigration")
 	fmt.Println("2 : Updates")
@@ -82,7 +88,7 @@ func main() {
 		}
 	} else if Option == "3" {
 		//Cluster awarenes checking
-		redisClient := redis.New(RedisIP, 0, "")
+		redisClient := redis.New(RedisIP, RedisDB, RedisPasswd)
 		nodeStatus, err := redisClient.Get("DTClusterStatus")
 		if err != nil {
 			fmt.Println("Cannot continue since the redis has connectivity issue " + err.Error())
@@ -101,9 +107,10 @@ func main() {
 			checkStatus := true
 			for checkStatus == true {
 				fmt.Println("Waiting ...")
-				time.Sleep(10 * time.Second)
+				time.Sleep(time.Duration(WaitTime) * time.Second)
 				fmt.Println("Checking status ...")
 				check, err := redisClient.Get("DTClusterStatus")
+				
 				if err != nil {
 					fmt.Println("Cannot continue since the redis has connectivity issue " + err.Error())
 					return
@@ -113,8 +120,9 @@ func main() {
 					checkStatus = true					
 				}else{
 					checkStatus = false
+					redisClient.Quit()
 					continuousUpdate(DB, User, Password, Host, CouchHost, CouchPool, CouchBucketUpdate, CouchBucketInsert, CouchViewUpdate, XMLPath, EnableDelete)
-				}
+				}				
 			}
 		}
 	}
