@@ -303,8 +303,8 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 
 		for i := 0; i < len(res.Rows); i++ {
 
-			updateId := reflect.ValueOf(res.Rows[0].Value).Interface().(map[string]interface{})["ID"].(string)
-			updateType := reflect.ValueOf(res.Rows[0].Value).Interface().(map[string]interface{})["Type"].(string)
+			updateId := reflect.ValueOf(res.Rows[i].Value).Interface().(map[string]interface{})["ID"].(string)
+			updateType := reflect.ValueOf(res.Rows[i].Value).Interface().(map[string]interface{})["Type"].(string)
 			bucketGet.Get(updateId, &f)
 
 			if updateType == "Insert" {
