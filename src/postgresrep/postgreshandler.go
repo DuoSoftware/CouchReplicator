@@ -281,12 +281,12 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 	for skipCount < totalCouchRows {
 
 		file.WriteString("Getting couch data skip " + strconv.Itoa(skipCount) + "\n")
-		if(enableDelete == "false"){
+		if enableDelete == "false" {
 			skipDeleteCount = skipCount
-		}else{
+		} else {
 			skipDeleteCount = 0
 		}
-		
+
 		res, err := bucket.View(couchViewName, couchViewName, map[string]interface{}{
 			"stale": false,
 			"limit": 5000,
@@ -331,10 +331,14 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 								//file.WriteString("Iterating change coumn " + prop.ColumnName + "\n")
 								var propValue = m[prop.ColumnName]
 								var accountInt int64
-								if reflect.TypeOf(propValue).Kind() == reflect.Float64 {
-									accountInt = int64(m[prop.ColumnName].(float64))
-									stringVal := strconv.FormatInt(accountInt, 10)
-									insertQuery = strings.Replace(insertQuery, "@"+prop.ColumnName+"_", stringVal, 100)
+								if propValue != nil {
+									if reflect.TypeOf(propValue).Kind() == reflect.Float64 {
+										accountInt = int64(m[prop.ColumnName].(float64))
+										stringVal := strconv.FormatInt(accountInt, 10)
+										insertQuery = strings.Replace(insertQuery, "@"+prop.ColumnName+"_", stringVal, 100)
+									}
+								}else{
+									insertQuery = strings.Replace(insertQuery, "@"+prop.ColumnName+"_", "", 100)
 								}
 
 							}
