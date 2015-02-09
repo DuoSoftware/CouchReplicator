@@ -337,7 +337,7 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 										stringVal := strconv.FormatInt(accountInt, 10)
 										insertQuery = strings.Replace(insertQuery, "@"+prop.ColumnName+"_", stringVal, 100)
 									}
-								}else{
+								} else {
 									insertQuery = strings.Replace(insertQuery, "@"+prop.ColumnName+"_", "", 100)
 								}
 
@@ -394,10 +394,6 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 							}
 
 							result, err := db.Exec(insertQuery)
-							if enableDelete == "true" {
-								bucket.Delete(res.Rows[i].ID)
-								fmt.Println(res.Rows[i].ID + " has deleted from bucket " + couchBucket)
-							}
 							fmt.Println(insertQuery)
 							if err != nil {
 								fmt.Println("Postgres insertion error : " + err.Error())
@@ -414,13 +410,15 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 							}
 
 							fmt.Println("processed " + strconv.Itoa(i) + " out of " + strconv.Itoa(res.TotalRows))
+							break
 						} else {
 							fmt.Println("Skipped key " + res.Rows[i].ID + "processed " + strconv.Itoa(i) + " out of " + strconv.Itoa(res.TotalRows))
-							if enableDelete == "true" {
-								bucket.Delete(res.Rows[i].ID)
-								fmt.Println(res.Rows[i].ID + " has deleted from bucket " + couchBucket)
-							}
 						}
+					}
+
+					if enableDelete == "true" {
+						bucket.Delete(res.Rows[i].ID)
+						fmt.Println(res.Rows[i].ID + " has deleted from bucket " + couchBucket)
 					}
 				}
 
@@ -502,10 +500,6 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 
 						//file.WriteString(updateQuery)
 						result, err := db.Exec(updateQuery)
-						if enableDelete == "true" {
-							bucket.Delete(res.Rows[i].ID)
-							fmt.Println(res.Rows[i].ID + " has deleted from bucket " + couchBucket)
-						}
 						fmt.Println(updateQuery)
 						if err != nil {
 							fmt.Println("Postgres update error : " + err.Error())
@@ -519,17 +513,17 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 								fmt.Println("Migrate status of key " + updateId + " is " + ok.Error())
 								file.WriteString("Migrate status of key " + updateId + " is " + ok.Error())
 							}
+							break;
 						}
 					} else {
 						fmt.Println("Skipped key " + updateId + "processed " + strconv.Itoa(i) + " out of " + strconv.Itoa(res.TotalRows))
-						if enableDelete == "true" {
-							bucket.Delete(res.Rows[i].ID)
-							fmt.Println(res.Rows[i].ID + " has deleted from bucket " + couchBucket)
-						}
 					}
-
 				}
 
+				if enableDelete == "true" {
+					bucket.Delete(res.Rows[i].ID)
+					fmt.Println(res.Rows[i].ID + " has deleted from bucket " + couchBucket)
+				}
 			}
 		}
 
