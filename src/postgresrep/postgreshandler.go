@@ -533,6 +533,7 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 	}
 
 	file.Close()
+	//closing log file
 	fmt.Println("Log file closed")
 	db.Close()
 	fmt.Println("Postgres connection closed")
