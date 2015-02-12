@@ -11,6 +11,7 @@ import "database/sql"
 
 func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket, couchViewName, xmlPath, enableDelete string) {
 
+	isCommit:= false
 	file, _ := os.Create("loginsert.txt")
 	//getting table mappings
 	var tables = GetXMLData(xmlPath, file)
@@ -98,7 +99,13 @@ func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, co
 				for _, table := range tables.Tables {
 					//file.WriteString("Iterating table table.CouchName " + "\n")
 					fmt.Println("Iterating table " + table.CouchName + "\n")
-					if strings.Contains(res.Rows[i].ID, table.CouchName) {
+					if(table.SkipType == "true"){
+						isCommit = true
+					}else{
+						isCommit = strings.Contains(res.Rows[i].ID, table.CouchName)
+					}
+					
+					if isCommit == true {
 						m := f.(map[string]interface{})
 						//fmt.Println(m)
 						var insertQuery = table.PGInsert
