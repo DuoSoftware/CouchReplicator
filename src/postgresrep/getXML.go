@@ -54,7 +54,7 @@ func GetXMLData(filePath string, file *os.File) (xmlData Tables) {
 	err2 := xml.Unmarshal(pg, &tables)
 	if err2 != nil {
 		fmt.Println("Error unmarshal file:", err2)
-		file.WriteString(err.Error() + "\n")
+		file.WriteString(err2.Error() + "\n")
 	}
 
 	return tables
