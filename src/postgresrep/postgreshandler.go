@@ -368,8 +368,8 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 
 		for i := 0; i < len(res.Rows); i++ {
 
-			updateId := reflect.ValueOf(res.Rows[0].Value).Interface().(map[string]interface{})["ID"].(string)
-			updateType := reflect.ValueOf(res.Rows[0].Value).Interface().(map[string]interface{})["Type"].(string)
+			updateId := reflect.ValueOf(res.Rows[i].Value).Interface().(map[string]interface{})["ID"].(string)
+			updateType := reflect.ValueOf(res.Rows[i].Value).Interface().(map[string]interface{})["Type"].(string)
 			bucketGet.Get(updateId, &f)
 
 			if updateType == "Insert" {
@@ -465,6 +465,11 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 									//------------------------------------------------
 									fmt.Println(insertQuery)
 									result, err := db.Exec(insertQuery)
+									if enableDelete == "true" {
+										deleteErr := bucket.Delete(res.Rows[i].ID).Error()
+
+										fmt.Println(res.Rows[i].ID + " has deleted from bucket " + couchBucket + " and error is " + deleteErr)
+									}
 									file.WriteString(insertQuery)
 
 									if err != nil {
@@ -499,8 +504,8 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 
 								result, err := db.Exec(insertQuery)
 								if enableDelete == "true" {
-									bucket.Delete(res.Rows[i].ID)
-									fmt.Println(res.Rows[i].ID + " has deleted from bucket " + couchBucket)
+									deleteErr := bucket.Delete(res.Rows[i].ID).Error()									
+									fmt.Println(res.Rows[i].ID + " has deleted from bucket " + couchBucket + " and error is " + deleteErr)
 								}
 								fmt.Println(insertQuery)
 								if err != nil {
@@ -610,8 +615,12 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 						//file.WriteString(updateQuery)
 						result, err := db.Exec(updateQuery)
 						if enableDelete == "true" {
-							bucket.Delete(res.Rows[i].ID)
-							fmt.Println(res.Rows[i].ID + " has deleted from bucket " + couchBucket)
+							deleteErr := bucket.Delete(res.Rows[i].ID).Error()
+							fmt.Println(res.Rows[i].ID + " has deleted from bucket " + couchBucket + " and error is " + deleteErr)
+						}
+						if enableDelete == "true" {
+							deleteErr := bucket.Delete(res.Rows[i].ID).Error()
+							fmt.Println(res.Rows[i].ID + " has deleted from bucket " + couchBucket + " and error is " + deleteErr)
 						}
 						fmt.Println(updateQuery)
 						if err != nil {
@@ -630,7 +639,7 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 					} else {
 						fmt.Println("Skipped key " + updateId + "processed " + strconv.Itoa(i) + " out of " + strconv.Itoa(res.TotalRows))
 						if enableDelete == "true" {
-							bucket.Delete(res.Rows[i].ID)
+							bucket.Delete(res.Rows[i].ID).Error()
 							fmt.Println(res.Rows[i].ID + " has deleted from bucket " + couchBucket)
 						}
 					}
