@@ -6,7 +6,7 @@ import "redis"
 import "time"
 
 func main() {
-		
+			
 	var DB, User, Password, Host, CouchHost, CouchPool, CouchBucketInsert, CouchBucketUpdate, CouchViewInsert, CouchViewUpdate, XMLPath, Option, EnableDelete, RedisIP, RedisPasswd string
 	var WaitTime,RedisDB int
 
