@@ -77,6 +77,7 @@ func main() {
 	fmt.Println("1 : InitialMigration")
 	fmt.Println("2 : Updates")
 	fmt.Println("3 : Continuous Update")
+	fmt.Println("4 : Bulk delete from couch")
 	fmt.Scanf("%s\n", &Option)
 
 	if Option == "1" {
@@ -125,6 +126,8 @@ func main() {
 				}				
 			}
 		}
+	}else if Option == "4" {				
+		postgresrep.BulkDeleteFromCouch(CouchHost, CouchPool, CouchBucketInsert, CouchViewInsert)
 	}
 }
 
