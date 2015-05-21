@@ -127,6 +127,10 @@ func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, co
 						if len(strArray) > 0 {
 							if len(strArray[0]) > 0 {
 
+								if reflect.ValueOf(m[strArray[0]]).IsValid() != true {
+									goto SilentSkip
+								}
+
 								for i := 0; i < reflect.ValueOf(m[strArray[0]]).Len(); i++ {
 									fmt.Println("Index Number")
 									fmt.Println(i)
@@ -261,6 +265,7 @@ func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, co
 					}
 				}
 			}
+		SilentSkip:
 		}
 
 		fmt.Println(strconv.Itoa(len(res.Rows)) + " data processed")
@@ -416,6 +421,11 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 
 								if len(strArray) > 0 {
 									if len(strArray[0]) > 0 {
+
+										if reflect.ValueOf(m[strArray[0]]).IsValid() != true {
+											goto SilentSkip
+										}
+
 										for i := 0; i < reflect.ValueOf(m[strArray[0]]).Len(); i++ {
 
 											for _, nested := range table.NestedColumn {
@@ -557,6 +567,11 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 
 							if len(strArray) > 0 {
 								if len(strArray[0]) > 0 {
+
+									if reflect.ValueOf(m[strArray[0]]).IsValid() != true {
+										goto SilentSkip
+									}
+
 									for i := 0; i < reflect.ValueOf(m[strArray[0]]).Len(); i++ {
 
 										for _, nested := range table.NestedColumn {
@@ -665,6 +680,8 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 			} else {
 				fmt.Println("Skipped key " + updateId + ", value is null. processed " + strconv.Itoa(i) + " out of " + strconv.Itoa(res.TotalRows))
 			}
+
+		SilentSkip:
 
 			if enableDelete == "true" {
 				bucket.Delete(res.Rows[i].ID)

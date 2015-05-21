@@ -2,13 +2,14 @@ package main
 
 import "fmt"
 import "postgresrep"
+import "elasticrep"
 import "redis"
 import "time"
 
 func main() {
-			
-	var DB, User, Password, Host, CouchHost, CouchPool, CouchBucketInsert, CouchBucketUpdate, CouchViewInsert, CouchViewUpdate, XMLPath, Option, EnableDelete, RedisIP, RedisPasswd string
-	var WaitTime,RedisDB int
+
+	var DB, User, Password, Host, CouchHost, CouchPool, CouchBucketInsert, CouchBucketUpdate, CouchViewInsert, CouchViewUpdate, XMLPath, Option, EnableDelete, RedisIP, RedisPasswd, ElasticHost, IndexName, IndexType string
+	var WaitTime, RedisDB, NumberOfRecords int
 
 	fmt.Print("Postgres database name(ReportDB) : ")
 	fmt.Scanf("%s\n", &DB)
@@ -69,15 +70,20 @@ func main() {
 	fmt.Print("Enable delete from update bucket(true/false) : ")
 	fmt.Scanf("%s\n", &EnableDelete)
 	fmt.Println()
-	
+
 	fmt.Print("Update status checking wait time(in seconds - 10) : ")
 	fmt.Scanf("%d\n", &WaitTime)
+	fmt.Println()
+
+	fmt.Print("Elastic host(192.168.1.2) : ")
+	fmt.Scanf("%s\n", &ElasticHost)
 	fmt.Println()
 
 	fmt.Println("1 : InitialMigration")
 	fmt.Println("2 : Updates")
 	fmt.Println("3 : Continuous Update")
 	fmt.Println("4 : Bulk delete from couch")
+	fmt.Println("5 : Bulk Insert to Elastic")
 	fmt.Scanf("%s\n", &Option)
 
 	if Option == "1" {
@@ -111,23 +117,38 @@ func main() {
 				time.Sleep(time.Duration(WaitTime) * time.Second)
 				fmt.Println("Checking status ...")
 				check, err := redisClient.Get("DTClusterStatus")
-				
+
 				if err != nil {
 					fmt.Println("Cannot continue since the redis has connectivity issue " + err.Error())
 					return
 				}
-				
-				if(check.String() == "1"){
-					checkStatus = true					
-				}else{
+
+				if check.String() == "1" {
+					checkStatus = true
+				} else {
 					checkStatus = false
 					redisClient.Quit()
 					continuousUpdate(DB, User, Password, Host, CouchHost, CouchPool, CouchBucketUpdate, CouchBucketInsert, CouchViewUpdate, XMLPath, EnableDelete)
-				}				
+				}
 			}
 		}
-	}else if Option == "4" {				
+	} else if Option == "4" {
 		postgresrep.BulkDeleteFromCouch(CouchHost, CouchPool, CouchBucketInsert, CouchViewInsert)
+	} else if Option == "5" {
+
+		fmt.Print("Number of records : ")
+		fmt.Scanf("%d\n", &NumberOfRecords)
+		fmt.Println()
+
+		fmt.Print("Index Name : ")
+		fmt.Scanf("%s\n", &IndexName)
+		fmt.Println()
+
+		fmt.Print("Index Type : ")
+		fmt.Scanf("%s\n", &IndexType)
+		fmt.Println()
+
+		elasticrep.BulkInsert(IndexName, IndexType, ElasticHost, NumberOfRecords)
 	}
 }
 
