@@ -8,6 +8,7 @@ import "strconv"
 import "reflect"
 import "os"
 import "database/sql"
+import linq "go-linq"
 
 func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket, couchViewName, xmlPath, enableDelete string) {
 
@@ -369,31 +370,184 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 
 			updateId := reflect.ValueOf(res.Rows[i].Value).Interface().(map[string]interface{})["ID"].(string)
 			updateType := reflect.ValueOf(res.Rows[i].Value).Interface().(map[string]interface{})["Type"].(string)
+			objectType := reflect.ValueOf(res.Rows[i].Value).Interface().(map[string]interface{})["ObjectType"].(string)
+
 			bucketGet.Get(updateId, &f)
+			updateTable, _, _ := linq.From(tables.Tables).Where(
+				func(in linq.T) (bool, error) { return in.(Table).CouchName == objectType, nil }).First()
 
-			if f != nil {
+			if updateTable != nil {
 
-				if updateType == "Insert" {
+				if f != nil {
 
-					fmt.Println("Getting value for key :" + updateId)
-					file.WriteString("Getting value for key :" + updateId + "\n")
+					if updateType == "Insert" {
 
-					err := bucketGet.Get(updateId, &f)
-					if (err != nil) || (f == nil) {
-						fmt.Println("Object not found for key :" + updateId)
+						fmt.Println("Getting value for key :" + updateId)
+						file.WriteString("Getting value for key :" + updateId + "\n")
+
+						err := bucketGet.Get(updateId, &f)
+						if (err != nil) || (f == nil) {
+							fmt.Println("Object not found for key :" + updateId)
+						} else {
+
+							m := f.(map[string]interface{})
+
+							fmt.Println("Got value for key :" + updateId)
+
+							for _, table := range tables.Tables {
+								//file.WriteString("Iterating table table.CouchName " + "\n")
+								if strings.Contains(updateId, table.CouchName) {
+
+									//file.WriteString("Iterating table couch " + table.CouchName + "\n")
+									var insertQuery = table.PGInsert
+									//file.WriteString("Iterating change columns " + "\n")
+									for _, prop := range table.PGChange {
+										//file.WriteString("Iterating change coumn " + prop.ColumnName + "\n")
+										var propValue = m[prop.ColumnName]
+										var accountInt int64
+										if propValue != nil {
+											if reflect.TypeOf(propValue).Kind() == reflect.Float64 {
+												accountInt = int64(m[prop.ColumnName].(float64))
+												stringVal := strconv.FormatInt(accountInt, 10)
+												insertQuery = strings.Replace(insertQuery, "@"+prop.ColumnName+"_", stringVal, 100)
+											}
+										} else {
+											insertQuery = strings.Replace(insertQuery, "@"+prop.ColumnName+"_", "", 100)
+										}
+
+									}
+
+									var nestedTrue = true
+
+									var strArray = []string{}
+									fmt.Println("Iterating nested columns " + "\n")
+									for _, nested := range table.NestedColumn {
+										strArray = strings.Split(nested.ColumnName, ".")
+										break
+									}
+
+									if len(strArray) > 0 {
+										if len(strArray[0]) > 0 {
+
+											if reflect.ValueOf(m[strArray[0]]).IsValid() != true {
+												goto SilentSkip
+											}
+
+											for i := 0; i < reflect.ValueOf(m[strArray[0]]).Len(); i++ {
+
+												for _, nested := range table.NestedColumn {
+													var strArray = []string{}
+													strArray = strings.Split(nested.ColumnName, ".")
+													if len(strArray) == 3 {
+														//index, _ := strconv.Atoi(strArray[1])
+														if reflect.ValueOf(m[strArray[0]]).Len() > 0 {
+															nestedValue := m[strArray[0]].([]interface{})[i].(map[string]interface{})[strArray[2]]
+
+															if nested.Fixed == 1 {
+																if reflect.TypeOf(nestedValue).Kind() == reflect.Float64 {
+																	accountInt := int64(nestedValue.(float64))
+																	stringVal := strconv.FormatInt(accountInt, 10)
+																	insertQuery = strings.Replace(insertQuery, "@"+nested.ColumnName, stringVal, -1)
+																}
+															} else {
+																insertQuery = strings.Replace(insertQuery, "@"+nested.ColumnName, GetStringValue(nestedValue), -1)
+															}
+														} else {
+															insertQuery = strings.Replace(insertQuery, "@"+nested.ColumnName, "", -1)
+														}
+
+													} else if len(strArray) == 2 {
+														index, _ := strconv.Atoi(strArray[1])
+														if reflect.ValueOf(m[strArray[0]]).Len() > 0 {
+															nestedValue := m[strArray[0]].([]interface{})[index]
+
+															if reflect.TypeOf(nestedValue).Kind() == reflect.Float64 {
+																accountInt := int64(nestedValue.(float64))
+																stringVal := strconv.FormatInt(accountInt, 10)
+																insertQuery = strings.Replace(insertQuery, "@"+nested.ColumnName, stringVal, -1)
+															} else {
+																insertQuery = strings.Replace(insertQuery, "@"+nested.ColumnName, GetStringValue(nestedValue), -1)
+															}
+														} else {
+															insertQuery = strings.Replace(insertQuery, "@"+nested.ColumnName, "", -1)
+														}
+
+													}
+
+												}
+
+												//insert query here
+
+												nestedTrue = false
+												fmt.Println(nestedTrue)
+												//------------------------------------------------
+												fmt.Println(insertQuery)
+												result, err := db.Exec(insertQuery)
+												file.WriteString(insertQuery)
+
+												if err != nil {
+													fmt.Println("Postgres insertion error : " + err.Error())
+													file.WriteString(err.Error() + "\n")
+												} else {
+													status, ok := result.RowsAffected()
+													if ok == nil {
+														fmt.Println("Migrate status of key " + res.Rows[0].ID + " is " + strconv.FormatInt(status, 10))
+														file.WriteString("Migrate status of key " + res.Rows[0].ID + " is " + strconv.FormatInt(status, 10))
+													} else {
+														fmt.Println("Migrate status of key " + res.Rows[0].ID + " is " + ok.Error())
+														file.WriteString("Migrate status of key " + res.Rows[0].ID + " is " + ok.Error())
+													}
+												}
+
+											} // index loop endup here
+										}
+									}
+
+									for k, v := range m {
+
+										if v != nil {
+											insertQuery = strings.Replace(insertQuery, "@"+k, GetStringValue(v), -1)
+										} else {
+											insertQuery = strings.Replace(insertQuery, "@"+k, "", -1)
+										}
+									}
+
+									if nestedTrue == true {
+										result, err := db.Exec(insertQuery)
+										fmt.Println(insertQuery)
+										if err != nil {
+											fmt.Println("Postgres insertion error : " + err.Error())
+											file.WriteString(err.Error() + "\n")
+										} else {
+											status, ok := result.RowsAffected()
+											if ok == nil {
+												fmt.Println("Migrate status of key " + res.Rows[0].ID + " is " + strconv.FormatInt(status, 10))
+												file.WriteString("Migrate status of key " + res.Rows[0].ID + " is " + strconv.FormatInt(status, 10))
+											} else {
+												fmt.Println("Migrate status of key " + res.Rows[0].ID + " is " + ok.Error())
+												file.WriteString("Migrate status of key " + res.Rows[0].ID + " is " + ok.Error())
+											}
+										}
+									}
+
+									fmt.Println("processed " + strconv.Itoa(i) + " out of " + strconv.Itoa(res.TotalRows))
+									break
+								} else {
+									fmt.Println("Skipped key " + res.Rows[i].ID + "processed " + strconv.Itoa(i) + " out of " + strconv.Itoa(res.TotalRows))
+								}
+							}
+						}
+
 					} else {
 
-						m := f.(map[string]interface{})
-
-						fmt.Println("Got value for key :" + updateId)
-
 						for _, table := range tables.Tables {
-							//file.WriteString("Iterating table table.CouchName " + "\n")
+							//file.WriteString("Iterating tables " + "\n")
 							if strings.Contains(updateId, table.CouchName) {
 
 								//file.WriteString("Iterating table couch " + table.CouchName + "\n")
-								var insertQuery = table.PGInsert
-								//file.WriteString("Iterating change columns " + "\n")
+								var updateQuery = table.PGUpdate
+								m := f.(map[string]interface{})
+								//file.WriteString("Iterating change coumns " + "\n")
 								for _, prop := range table.PGChange {
 									//file.WriteString("Iterating change coumn " + prop.ColumnName + "\n")
 									var propValue = m[prop.ColumnName]
@@ -402,12 +556,11 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 										if reflect.TypeOf(propValue).Kind() == reflect.Float64 {
 											accountInt = int64(m[prop.ColumnName].(float64))
 											stringVal := strconv.FormatInt(accountInt, 10)
-											insertQuery = strings.Replace(insertQuery, "@"+prop.ColumnName+"_", stringVal, 100)
+											updateQuery = strings.Replace(updateQuery, "@"+prop.ColumnName+"_", stringVal, 100)
 										}
 									} else {
-										insertQuery = strings.Replace(insertQuery, "@"+prop.ColumnName+"_", "", 100)
+										updateQuery = strings.Replace(updateQuery, "@"+prop.ColumnName+"_", "", 100)
 									}
-
 								}
 
 								var nestedTrue = true
@@ -440,13 +593,13 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 															if reflect.TypeOf(nestedValue).Kind() == reflect.Float64 {
 																accountInt := int64(nestedValue.(float64))
 																stringVal := strconv.FormatInt(accountInt, 10)
-																insertQuery = strings.Replace(insertQuery, "@"+nested.ColumnName, stringVal, -1)
+																updateQuery = strings.Replace(updateQuery, "@"+nested.ColumnName, stringVal, -1)
 															}
 														} else {
-															insertQuery = strings.Replace(insertQuery, "@"+nested.ColumnName, GetStringValue(nestedValue), -1)
+															updateQuery = strings.Replace(updateQuery, "@"+nested.ColumnName, GetStringValue(nestedValue), -1)
 														}
 													} else {
-														insertQuery = strings.Replace(insertQuery, "@"+nested.ColumnName, "", -1)
+														updateQuery = strings.Replace(updateQuery, "@"+nested.ColumnName, "", -1)
 													}
 
 												} else if len(strArray) == 2 {
@@ -457,12 +610,12 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 														if reflect.TypeOf(nestedValue).Kind() == reflect.Float64 {
 															accountInt := int64(nestedValue.(float64))
 															stringVal := strconv.FormatInt(accountInt, 10)
-															insertQuery = strings.Replace(insertQuery, "@"+nested.ColumnName, stringVal, -1)
+															updateQuery = strings.Replace(updateQuery, "@"+nested.ColumnName, stringVal, -1)
 														} else {
-															insertQuery = strings.Replace(insertQuery, "@"+nested.ColumnName, GetStringValue(nestedValue), -1)
+															updateQuery = strings.Replace(updateQuery, "@"+nested.ColumnName, GetStringValue(nestedValue), -1)
 														}
 													} else {
-														insertQuery = strings.Replace(insertQuery, "@"+nested.ColumnName, "", -1)
+														updateQuery = strings.Replace(updateQuery, "@"+nested.ColumnName, "", -1)
 													}
 
 												}
@@ -474,9 +627,9 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 											nestedTrue = false
 											fmt.Println(nestedTrue)
 											//------------------------------------------------
-											fmt.Println(insertQuery)
-											result, err := db.Exec(insertQuery)
-											file.WriteString(insertQuery)
+											fmt.Println(updateQuery)
+											result, err := db.Exec(updateQuery)
+											file.WriteString(updateQuery)
 
 											if err != nil {
 												fmt.Println("Postgres insertion error : " + err.Error())
@@ -499,186 +652,43 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 								for k, v := range m {
 
 									if v != nil {
-										insertQuery = strings.Replace(insertQuery, "@"+k, GetStringValue(v), -1)
+										updateQuery = strings.Replace(updateQuery, "@"+k, GetStringValue(v), -1)
 									} else {
-										insertQuery = strings.Replace(insertQuery, "@"+k, "", -1)
+										updateQuery = strings.Replace(updateQuery, "@"+k, "", -1)
 									}
 								}
 
+								//file.WriteString(updateQuery)
 								if nestedTrue == true {
-									result, err := db.Exec(insertQuery)
-									fmt.Println(insertQuery)
+									result, err := db.Exec(updateQuery)
+									fmt.Println(updateQuery)
 									if err != nil {
-										fmt.Println("Postgres insertion error : " + err.Error())
+										fmt.Println("Postgres update error : " + err.Error())
 										file.WriteString(err.Error() + "\n")
 									} else {
 										status, ok := result.RowsAffected()
 										if ok == nil {
-											fmt.Println("Migrate status of key " + res.Rows[0].ID + " is " + strconv.FormatInt(status, 10))
-											file.WriteString("Migrate status of key " + res.Rows[0].ID + " is " + strconv.FormatInt(status, 10))
+											fmt.Println("Migrate status of key " + updateId + " is " + strconv.FormatInt(status, 10))
+											file.WriteString("Migrate status of key " + updateId + " is " + strconv.FormatInt(status, 10))
 										} else {
-											fmt.Println("Migrate status of key " + res.Rows[0].ID + " is " + ok.Error())
-											file.WriteString("Migrate status of key " + res.Rows[0].ID + " is " + ok.Error())
+											fmt.Println("Migrate status of key " + updateId + " is " + ok.Error())
+											file.WriteString("Migrate status of key " + updateId + " is " + ok.Error())
 										}
+										break
 									}
 								}
 
-								fmt.Println("processed " + strconv.Itoa(i) + " out of " + strconv.Itoa(res.TotalRows))
-								break
 							} else {
-								fmt.Println("Skipped key " + res.Rows[i].ID + "processed " + strconv.Itoa(i) + " out of " + strconv.Itoa(res.TotalRows))
+								fmt.Println("Skipped key " + updateId + "processed " + strconv.Itoa(i) + " out of " + strconv.Itoa(res.TotalRows))
 							}
 						}
 					}
 
 				} else {
-
-					for _, table := range tables.Tables {
-						//file.WriteString("Iterating tables " + "\n")
-						if strings.Contains(updateId, table.CouchName) {
-
-							//file.WriteString("Iterating table couch " + table.CouchName + "\n")
-							var updateQuery = table.PGUpdate
-							m := f.(map[string]interface{})
-							//file.WriteString("Iterating change coumns " + "\n")
-							for _, prop := range table.PGChange {
-								//file.WriteString("Iterating change coumn " + prop.ColumnName + "\n")
-								var propValue = m[prop.ColumnName]
-								var accountInt int64
-								if propValue != nil {
-									if reflect.TypeOf(propValue).Kind() == reflect.Float64 {
-										accountInt = int64(m[prop.ColumnName].(float64))
-										stringVal := strconv.FormatInt(accountInt, 10)
-										updateQuery = strings.Replace(updateQuery, "@"+prop.ColumnName+"_", stringVal, 100)
-									}
-								} else {
-									updateQuery = strings.Replace(updateQuery, "@"+prop.ColumnName+"_", "", 100)
-								}
-							}
-
-							var nestedTrue = true
-
-							var strArray = []string{}
-							fmt.Println("Iterating nested columns " + "\n")
-							for _, nested := range table.NestedColumn {
-								strArray = strings.Split(nested.ColumnName, ".")
-								break
-							}
-
-							if len(strArray) > 0 {
-								if len(strArray[0]) > 0 {
-
-									if reflect.ValueOf(m[strArray[0]]).IsValid() != true {
-										goto SilentSkip
-									}
-
-									for i := 0; i < reflect.ValueOf(m[strArray[0]]).Len(); i++ {
-
-										for _, nested := range table.NestedColumn {
-											var strArray = []string{}
-											strArray = strings.Split(nested.ColumnName, ".")
-											if len(strArray) == 3 {
-												//index, _ := strconv.Atoi(strArray[1])
-												if reflect.ValueOf(m[strArray[0]]).Len() > 0 {
-													nestedValue := m[strArray[0]].([]interface{})[i].(map[string]interface{})[strArray[2]]
-
-													if nested.Fixed == 1 {
-														if reflect.TypeOf(nestedValue).Kind() == reflect.Float64 {
-															accountInt := int64(nestedValue.(float64))
-															stringVal := strconv.FormatInt(accountInt, 10)
-															updateQuery = strings.Replace(updateQuery, "@"+nested.ColumnName, stringVal, -1)
-														}
-													} else {
-														updateQuery = strings.Replace(updateQuery, "@"+nested.ColumnName, GetStringValue(nestedValue), -1)
-													}
-												} else {
-													updateQuery = strings.Replace(updateQuery, "@"+nested.ColumnName, "", -1)
-												}
-
-											} else if len(strArray) == 2 {
-												index, _ := strconv.Atoi(strArray[1])
-												if reflect.ValueOf(m[strArray[0]]).Len() > 0 {
-													nestedValue := m[strArray[0]].([]interface{})[index]
-
-													if reflect.TypeOf(nestedValue).Kind() == reflect.Float64 {
-														accountInt := int64(nestedValue.(float64))
-														stringVal := strconv.FormatInt(accountInt, 10)
-														updateQuery = strings.Replace(updateQuery, "@"+nested.ColumnName, stringVal, -1)
-													} else {
-														updateQuery = strings.Replace(updateQuery, "@"+nested.ColumnName, GetStringValue(nestedValue), -1)
-													}
-												} else {
-													updateQuery = strings.Replace(updateQuery, "@"+nested.ColumnName, "", -1)
-												}
-
-											}
-
-										}
-
-										//insert query here
-
-										nestedTrue = false
-										fmt.Println(nestedTrue)
-										//------------------------------------------------
-										fmt.Println(updateQuery)
-										result, err := db.Exec(updateQuery)
-										file.WriteString(updateQuery)
-
-										if err != nil {
-											fmt.Println("Postgres insertion error : " + err.Error())
-											file.WriteString(err.Error() + "\n")
-										} else {
-											status, ok := result.RowsAffected()
-											if ok == nil {
-												fmt.Println("Migrate status of key " + res.Rows[0].ID + " is " + strconv.FormatInt(status, 10))
-												file.WriteString("Migrate status of key " + res.Rows[0].ID + " is " + strconv.FormatInt(status, 10))
-											} else {
-												fmt.Println("Migrate status of key " + res.Rows[0].ID + " is " + ok.Error())
-												file.WriteString("Migrate status of key " + res.Rows[0].ID + " is " + ok.Error())
-											}
-										}
-
-									} // index loop endup here
-								}
-							}
-
-							for k, v := range m {
-
-								if v != nil {
-									updateQuery = strings.Replace(updateQuery, "@"+k, GetStringValue(v), -1)
-								} else {
-									updateQuery = strings.Replace(updateQuery, "@"+k, "", -1)
-								}
-							}
-
-							//file.WriteString(updateQuery)
-							if nestedTrue == true {
-								result, err := db.Exec(updateQuery)
-								fmt.Println(updateQuery)
-								if err != nil {
-									fmt.Println("Postgres update error : " + err.Error())
-									file.WriteString(err.Error() + "\n")
-								} else {
-									status, ok := result.RowsAffected()
-									if ok == nil {
-										fmt.Println("Migrate status of key " + updateId + " is " + strconv.FormatInt(status, 10))
-										file.WriteString("Migrate status of key " + updateId + " is " + strconv.FormatInt(status, 10))
-									} else {
-										fmt.Println("Migrate status of key " + updateId + " is " + ok.Error())
-										file.WriteString("Migrate status of key " + updateId + " is " + ok.Error())
-									}
-									break
-								}
-							}
-
-						} else {
-							fmt.Println("Skipped key " + updateId + "processed " + strconv.Itoa(i) + " out of " + strconv.Itoa(res.TotalRows))
-						}
-					}
+					fmt.Println("Skipped key " + updateId + ", value is null. processed " + strconv.Itoa(i) + " out of " + strconv.Itoa(res.TotalRows))
 				}
-
 			} else {
-				fmt.Println("Skipped key " + updateId + ", value is null. processed " + strconv.Itoa(i) + " out of " + strconv.Itoa(res.TotalRows))
+				fmt.Println("Skipped key " + updateId + ", There was no table found on configuration file. processed " + strconv.Itoa(i) + " out of " + strconv.Itoa(res.TotalRows))
 			}
 
 		SilentSkip:
