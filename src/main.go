@@ -3,13 +3,14 @@ package main
 import "fmt"
 import "postgresrep"
 import "elasticrep"
-import "redis"
+import "redis_1"
 import "time"
 
 func main() {
 
-	var DB, User, Password, Host, CouchHost, CouchPool, CouchBucketInsert, CouchBucketUpdate, CouchViewInsert, CouchViewUpdate, XMLPath, Option, EnableDelete, RedisIP, RedisPasswd, ElasticHost, IndexName, IndexType string
-	var WaitTime, RedisDB, NumberOfRecords int
+	var DB, User, Password, Host, CouchHost, CouchPool, CouchBucket, XMLPath, Option, EnableDelete, RedisIP, RedisPasswd, ElasticHost, IndexName, IndexType, CouchView string
+	var WaitTime, NumberOfRecords int
+	var RedisDB int64
 
 	fmt.Print("Postgres database name(ReportDB) : ")
 	fmt.Scanf("%s\n", &DB)
@@ -36,19 +37,11 @@ func main() {
 	fmt.Println()
 
 	fmt.Print("Couch bucket name for insert(BucketInsert) : ")
-	fmt.Scanf("%s\n", &CouchBucketInsert)
-	fmt.Println()
-
-	fmt.Print("Couch bucket name for update(BucketUpdate) : ")
-	fmt.Scanf("%s\n", &CouchBucketUpdate)
+	fmt.Scanf("%s\n", &CouchBucket)
 	fmt.Println()
 
 	fmt.Print("Couch view name for insert(report) : ")
-	fmt.Scanf("%s\n", &CouchViewInsert)
-	fmt.Println()
-
-	fmt.Print("Couch view name for update(report) : ")
-	fmt.Scanf("%s\n", &CouchViewUpdate)
+	fmt.Scanf("%s\n", &CouchView)
 	fmt.Println()
 
 	fmt.Print("XML Path(c:\\pg.xml) : ")
@@ -87,20 +80,18 @@ func main() {
 	fmt.Scanf("%s\n", &Option)
 
 	if Option == "1" {
-		postgresrep.InitialMigrationC2PG(DB, User, Password, Host, CouchHost, CouchPool, CouchBucketInsert, CouchViewInsert, XMLPath, EnableDelete)
+		postgresrep.InitialMigrationC2PG(DB, User, Password, Host, CouchHost, CouchPool, CouchBucket, CouchView, XMLPath, EnableDelete)
 	} else if Option == "2" {
-		err := postgresrep.UpdateC2PG(DB, User, Password, Host, CouchHost, CouchPool, CouchBucketUpdate, CouchBucketInsert, CouchViewUpdate, XMLPath, EnableDelete)
+		err := postgresrep.UpdateC2PG(DB, User, Password, Host, CouchHost, CouchPool, CouchBucket, XMLPath, EnableDelete, RedisIP, RedisPasswd, RedisDB)
 		if err != nil {
 			fmt.Println(err.Error())
 		}
 	} else if Option == "3" {
 		//Cluster awarenes checking
-		redisClient := redis.New(RedisIP, RedisDB, RedisPasswd)
-		nodeStatus, err := redisClient.Get("DTClusterStatus")
-		if err != nil {
-			fmt.Println("Cannot continue since the redis has connectivity issue " + err.Error())
-			return
-		}
+		var redisClient *redis_1.Client
+		redisClient = redis_1.NewTCPClient(&redis_1.Options{Addr:RedisIP+":6379", 
+				Password: RedisPasswd, DB:RedisDB})
+		nodeStatus := redisClient.Get("DTClusterStatus")	
 
 		if nodeStatus.String() == "0" {
 			fmt.Println("No other instances are running and setting lock for current instance")
@@ -108,7 +99,7 @@ func main() {
 			if err != nil {
 				fmt.Println("Cannot aquire lock from redis")
 			}
-			continuousUpdate(DB, User, Password, Host, CouchHost, CouchPool, CouchBucketUpdate, CouchBucketInsert, CouchViewUpdate, XMLPath, EnableDelete)
+			continuousUpdate(DB, User, Password, Host, CouchHost, CouchPool, CouchBucket, XMLPath, EnableDelete, RedisIP, RedisPasswd, RedisDB)
 		} else {
 
 			checkStatus := true
@@ -116,24 +107,20 @@ func main() {
 				fmt.Println("Waiting ...")
 				time.Sleep(time.Duration(WaitTime) * time.Second)
 				fmt.Println("Checking status ...")
-				check, err := redisClient.Get("DTClusterStatus")
-
-				if err != nil {
-					fmt.Println("Cannot continue since the redis has connectivity issue " + err.Error())
-					return
-				}
-
-				if check.String() == "1" {
+				check, _ := redisClient.Get("DTClusterStatus").Result()
+							
+				if check == "1" {
 					checkStatus = true
 				} else {
 					checkStatus = false
-					redisClient.Quit()
-					continuousUpdate(DB, User, Password, Host, CouchHost, CouchPool, CouchBucketUpdate, CouchBucketInsert, CouchViewUpdate, XMLPath, EnableDelete)
+					redisClient.Set("DTClusterStatus","1")
+					redisClient.Close()
+					continuousUpdate(DB, User, Password, Host, CouchHost, CouchPool, CouchBucket, XMLPath, EnableDelete, RedisIP, RedisPasswd, RedisDB)
 				}
 			}
 		}
 	} else if Option == "4" {
-		postgresrep.BulkDeleteFromCouch(CouchHost, CouchPool, CouchBucketInsert, CouchViewInsert)
+		postgresrep.BulkDeleteFromCouch(CouchHost, CouchPool, CouchBucket, CouchView)
 	} else if Option == "5" {
 
 		fmt.Print("Number of records : ")
@@ -152,11 +139,11 @@ func main() {
 	}
 }
 
-func continuousUpdate(DB, User, Password, Host, CouchHost, CouchPool, CouchBucketUpdate, CouchBucketInsert, CouchViewUpdate, XMLPath, EnableDelete string) {
+func continuousUpdate(dbname, user, password, host, couchHost, couchPool, couchBucket, xmlPath, enableDelete, redisIp, redisPassword string, redisDb int64) {
 	continueUpdate := true
 
 	for continueUpdate == true {
-		err := postgresrep.UpdateC2PG(DB, User, Password, Host, CouchHost, CouchPool, CouchBucketUpdate, CouchBucketInsert, CouchViewUpdate, XMLPath, EnableDelete)
+		err := postgresrep.UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket, xmlPath, enableDelete, redisIp, redisPassword , redisDb)
 		if err != nil {
 			fmt.Println(err.Error())
 			continueUpdate = false

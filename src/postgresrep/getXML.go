@@ -4,6 +4,13 @@ import "encoding/xml"
 import "fmt"
 import "io/ioutil"
 import "os"
+import "encoding/json"
+
+	type UpdateStruct struct{
+			ID       string `json:"ID"`
+			Type 	 string `json:"Type"`
+			ObjectType string `json:"ObjectType"`
+	}
 
 
 	type PGChange struct{
@@ -58,4 +65,17 @@ func GetXMLData(filePath string,file *os.File)(xmlData Tables){
 	}
 	
 	return tables
+}
+
+func Json2UpdateType(jsonString string) (structObject UpdateStruct) {
+
+	var dataStruct UpdateStruct
+
+	err := json.Unmarshal([]byte(jsonString), &dataStruct)
+
+	if err != nil {
+		fmt.Println(err.Error() + "\n")
+	}
+
+	return dataStruct
 }

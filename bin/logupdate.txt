@@ -1,0 +1,5 @@
+Connecting to the couch
+Getting couch pool 
+Getting couch bucket 
+Number of rows : 0
+Connecting to postgres

@@ -1,0 +1,334 @@
+!<arch>
+__.PKGDEF       0           0     0     644     46071     `
+go object windows amd64 go1.4 X:precisestack
+
+$$
+package couchbaseutil
+	import log "log"
+	import couchbase "couchbase"
+	import runtime "runtime"
+	import time "time"
+	import json "encoding/json"
+	type @"time".zone struct { @"time".name string; @"time".offset int; @"time".isDST bool }
+	type @"time".zoneTrans struct { @"time".when int64; @"time".index uint8; @"time".isstd bool; @"time".isutc bool }
+	type @"time".Location struct { @"time".name string; @"time".zone []@"time".zone; @"time".tx []@"time".zoneTrans; @"time".cacheStart int64; @"time".cacheEnd int64; @"time".cacheZone *@"time".zone }
+	func (@"time".lÂ·2 *@"time".Location "esc:0x0") String () (? string)
+	func (@"time".lÂ·2 *@"time".Location "esc:0x0") @"time".firstZoneUsed () (? bool)
+	func (@"time".lÂ·2 *@"time".Location "esc:0x2") @"time".get () (? *@"time".Location)
+	func (@"time".lÂ·6 *@"time".Location "esc:0x1") @"time".lookup (@"time".secÂ·7 int64) (@"time".nameÂ·1 string, @"time".offsetÂ·2 int, @"time".isDSTÂ·3 bool, @"time".startÂ·4 int64, @"time".endÂ·5 int64)
+	func (@"time".lÂ·2 *@"time".Location "esc:0x0") @"time".lookupFirstZone () (? int)
+	func (@"time".lÂ·4 *@"time".Location "esc:0x0") @"time".lookupName (@"time".nameÂ·5 string "esc:0x0", @"time".unixÂ·6 int64) (@"time".offsetÂ·1 int, @"time".isDSTÂ·2 bool, @"time".okÂ·3 bool)
+	type @"time".Duration int64
+	func (@"time".dÂ·2 @"time".Duration) Hours () (? float64) { var @"time".hourÂ·3 @"time".Duration; ; @"time".hourÂ·3 = @"time".dÂ·2 / @"time".Duration(0x34630B8A000); var @"time".nsecÂ·4 @"time".Duration; ; @"time".nsecÂ·4 = @"time".dÂ·2 % @"time".Duration(0x34630B8A000); return float64(@"time".hourÂ·3) + float64(@"time".nsecÂ·4) * 0x9C5FFF26ED75Fp-93 }
+	func (@"time".dÂ·2 @"time".Duration) Minutes () (? float64) { var @"time".minÂ·3 @"time".Duration; ; @"time".minÂ·3 = @"time".dÂ·2 / @"time".Duration(0xDF8475800); var @"time".nsecÂ·4 @"time".Duration; ; @"time".nsecÂ·4 = @"time".dÂ·2 % @"time".Duration(0xDF8475800); return float64(@"time".minÂ·3) + float64(@"time".nsecÂ·4) * 0x9299FF347E9E9p-87 }
+	func (@"time".dÂ·2 @"time".Duration) Nanoseconds () (? int64) { return int64(@"time".dÂ·2) }
+	func (@"time".dÂ·2 @"time".Duration) Seconds () (? float64) { var @"time".secÂ·3 @"time".Duration; ; @"time".secÂ·3 = @"time".dÂ·2 / @"time".Duration(0x3B9ACA00); var @"time".nsecÂ·4 @"time".Duration; ; @"time".nsecÂ·4 = @"time".dÂ·2 % @"time".Duration(0x3B9ACA00); return float64(@"time".secÂ·3) + float64(@"time".nsecÂ·4) * 0x112E0BE826D695p-82 }
+	func (@"time".dÂ·2 @"time".Duration) String () (? string)
+	type @"time".Month int
+	func (@"time".mÂ·2 @"time".Month) String () (? string) { return @"time".months[@"time".mÂ·2 - @"time".Month(0x1)] }
+	type @"time".Weekday int
+	func (@"time".dÂ·2 @"time".Weekday) String () (? string) { return @"time".days[@"time".dÂ·2] }
+	type @"time".Time struct { @"time".sec int64; @"time".nsec int32; @"time".loc *@"time".Location }
+	func (@"time".tÂ·2 @"time".Time "esc:0x2") Add (@"time".dÂ·3 @"time".Duration) (? @"time".Time)
+	func (@"time".tÂ·2 @"time".Time "esc:0x2") AddDate (@"time".yearsÂ·3 int, @"time".monthsÂ·4 int, @"time".daysÂ·5 int) (? @"time".Time)
+	func (@"time".tÂ·2 @"time".Time "esc:0x0") After (@"time".uÂ·3 @"time".Time "esc:0x0") (? bool) { return @"time".tÂ·2.@"time".sec > @"time".uÂ·3.@"time".sec || @"time".tÂ·2.@"time".sec == @"time".uÂ·3.@"time".sec && @"time".tÂ·2.@"time".nsec > @"time".uÂ·3.@"time".nsec }
+	func (@"time".tÂ·2 @"time".Time "esc:0x0") Before (@"time".uÂ·3 @"time".Time "esc:0x0") (? bool) { return @"time".tÂ·2.@"time".sec < @"time".uÂ·3.@"time".sec || @"time".tÂ·2.@"time".sec == @"time".uÂ·3.@"time".sec && @"time".tÂ·2.@"time".nsec < @"time".uÂ·3.@"time".nsec }
+	func (@"time".tÂ·4 @"time".Time "esc:0x0") Clock () (@"time".hourÂ·1 int, @"time".minÂ·2 int, @"time".secÂ·3 int)
+	func (@"time".tÂ·4 @"time".Time "esc:0x0") Date () (@"time".yearÂ·1 int, @"time".monthÂ·2 @"time".Month, @"time".dayÂ·3 int)
+	func (@"time".tÂ·2 @"time".Time "esc:0x0") Day () (? int)
+	func (@"time".tÂ·2 @"time".Time "esc:0x0") Equal (@"time".uÂ·3 @"time".Time "esc:0x0") (? bool) { return @"time".tÂ·2.@"time".sec == @"time".uÂ·3.@"time".sec && @"time".tÂ·2.@"time".nsec == @"time".uÂ·3.@"time".nsec }
+	func (@"time".tÂ·2 @"time".Time "esc:0x0") Format (@"time".layoutÂ·3 string "esc:0x0") (? string)
+	func (@"time".tÂ·2 *@"time".Time "esc:0x0") GobDecode (@"time".dataÂ·3 []byte "esc:0x0") (? error)
+	func (@"time".tÂ·3 @"time".Time "esc:0x0") GobEncode () (? []byte, ? error)
+	func (@"time".tÂ·2 @"time".Time "esc:0x0") Hour () (? int)
+	func (@"time".tÂ·3 @"time".Time "esc:0x0") ISOWeek () (@"time".yearÂ·1 int, @"time".weekÂ·2 int)
+	func (@"time".tÂ·2 @"time".Time "esc:0x2") In (@"time".locÂ·3 *@"time".Location "esc:0x2") (? @"time".Time)
+	func (@"time".tÂ·2 @"time".Time "esc:0x0") IsZero () (? bool) { return @"time".tÂ·2.@"time".sec == 0x0 && @"time".tÂ·2.@"time".nsec == 0x0 }
+	func (@"time".tÂ·2 @"time".Time "esc:0x2") Local () (? @"time".Time) { @"time".tÂ·2.@"time".loc = @"time".Local; return @"time".tÂ·2 }
+	func (@"time".tÂ·2 @"time".Time "esc:0x2") Location () (? *@"time".Location) { var @"time".lÂ·3 *@"time".Location; ; @"time".lÂ·3 = @"time".tÂ·2.@"time".loc; if @"time".lÂ·3 == nil { @"time".lÂ·3 = @"time".UTC }; return @"time".lÂ·3 }
+	func (@"time".tÂ·3 @"time".Time "esc:0x0") MarshalBinary () (? []byte, ? error)
+	func (@"time".tÂ·3 @"time".Time "esc:0x0") MarshalJSON () (? []byte, ? error)
+	func (@"time".tÂ·3 @"time".Time "esc:0x0") MarshalText () (? []byte, ? error)
+	func (@"time".tÂ·2 @"time".Time "esc:0x0") Minute () (? int)
+	func (@"time".tÂ·2 @"time".Time "esc:0x0") Month () (? @"time".Month)
+	func (@"time".tÂ·2 @"time".Time "esc:0x0") Nanosecond () (? int) { return int(@"time".tÂ·2.@"time".nsec) }
+	func (@"time".tÂ·2 @"time".Time "esc:0x2") Round (@"time".dÂ·3 @"time".Duration) (? @"time".Time)
+	func (@"time".tÂ·2 @"time".Time "esc:0x0") Second () (? int)
+	func (@"time".tÂ·2 @"time".Time "esc:0x0") String () (? string)
+	func (@"time".tÂ·2 @"time".Time "esc:0x0") Sub (@"time".uÂ·3 @"time".Time "esc:0x0") (? @"time".Duration)
+	func (@"time".tÂ·2 @"time".Time "esc:0x2") Truncate (@"time".dÂ·3 @"time".Duration) (? @"time".Time)
+	func (@"time".tÂ·2 @"time".Time "esc:0x2") UTC () (? @"time".Time) { @"time".tÂ·2.@"time".loc = @"time".UTC; return @"time".tÂ·2 }
+	func (@"time".tÂ·2 @"time".Time "esc:0x0") Unix () (? int64) { return @"time".tÂ·2.@"time".sec + -0xE7791F700 }
+	func (@"time".tÂ·2 @"time".Time "esc:0x0") UnixNano () (? int64) { return (@"time".tÂ·2.@"time".sec + -0xE7791F700) * 0x3B9ACA00 + int64(@"time".tÂ·2.@"time".nsec) }
+	func (@"time".tÂ·2 *@"time".Time "esc:0x0") UnmarshalBinary (@"time".dataÂ·3 []byte "esc:0x0") (? error)
+	func (@"time".tÂ·2 *@"time".Time "esc:0x0") UnmarshalJSON (@"time".dataÂ·3 []byte "esc:0x0") (@"time".errÂ·1 error)
+	func (@"time".tÂ·2 *@"time".Time "esc:0x0") UnmarshalText (@"time".dataÂ·3 []byte "esc:0x0") (@"time".errÂ·1 error)
+	func (@"time".tÂ·2 @"time".Time "esc:0x0") Weekday () (? @"time".Weekday)
+	func (@"time".tÂ·2 @"time".Time "esc:0x0") Year () (? int)
+	func (@"time".tÂ·2 @"time".Time "esc:0x0") YearDay () (? int)
+	func (@"time".tÂ·3 @"time".Time "esc:0x0") Zone () (@"time".nameÂ·1 string, @"time".offsetÂ·2 int)
+	func (@"time".tÂ·2 @"time".Time "esc:0x0") @"time".abs () (? uint64)
+	func (@"time".tÂ·5 @"time".Time "esc:0x0") @"time".date (@"time".fullÂ·6 bool) (@"time".yearÂ·1 int, @"time".monthÂ·2 @"time".Month, @"time".dayÂ·3 int, @"time".ydayÂ·4 int)
+	func (@"time".tÂ·4 @"time".Time "esc:0x1") @"time".locabs () (@"time".nameÂ·1 string, @"time".offsetÂ·2 int, @"time".absÂ·3 uint64)
+	type @"".ViewMarker struct { Version int "json:\"version\""; Timestamp @"time".Time "json:\"timestamp\""; Type string "json:\"type\"" }
+	type @"couchbase".VBucketServerMap struct { HashAlgorithm string "json:\"hashAlgorithm\""; NumReplicas int "json:\"numReplicas\""; ServerList []string "json:\"serverList\""; VBucketMap [][]int "json:\"vBucketMap\"" }
+	type @"couchbase".Node struct { ClusterCompatibility int "json:\"clusterCompatibility\""; ClusterMembership string "json:\"clusterMembership\""; CouchAPIBase string "json:\"couchApiBase\""; Hostname string "json:\"hostname\""; InterestingStats map[string]float64 "json:\"interestingStats,omitempty\""; MCDMemoryAllocated float64 "json:\"mcdMemoryAllocated\""; MCDMemoryReserved float64 "json:\"mcdMemoryReserved\""; MemoryFree float64 "json:\"memoryFree\""; MemoryTotal float64 "json:\"memoryTotal\""; OS string "json:\"os\""; Ports map[string]int "json:\"ports\""; Status string "json:\"status\""; Uptime int "json:\"uptime,string\""; Version string "json:\"version\""; ThisNode bool "json:\"thisNode,omitempty\"" }
+	import url "net/url" // indirect
+	type @"net/url".Userinfo struct { @"net/url".username string; @"net/url".password string; @"net/url".passwordSet bool }
+	func (@"net/url".uÂ·3 *@"net/url".Userinfo "esc:0x1") Password () (? string, ? bool) { if @"net/url".uÂ·3.@"net/url".passwordSet { return @"net/url".uÂ·3.@"net/url".password, true }; return "", false }
+	func (@"net/url".uÂ·2 *@"net/url".Userinfo "esc:0x1") String () (? string)
+	func (@"net/url".uÂ·2 *@"net/url".Userinfo "esc:0x1") Username () (? string) { return @"net/url".uÂ·2.@"net/url".username }
+	type @"net/url".Values map[string][]string
+	func (@"net/url".vÂ·1 @"net/url".Values "esc:0x0") Add (@"net/url".keyÂ·2 string, @"net/url".valueÂ·3 string) { @"net/url".vÂ·1[@"net/url".keyÂ·2] = append(@"net/url".vÂ·1[@"net/url".keyÂ·2], @"net/url".valueÂ·3) }
+	func (@"net/url".vÂ·1 @"net/url".Values "esc:0x0") Del (@"net/url".keyÂ·2 string "esc:0x0") { delete(@"net/url".vÂ·1, @"net/url".keyÂ·2) }
+	func (@"net/url".vÂ·2 @"net/url".Values "esc:0x0") Encode () (? string)
+	func (@"net/url".vÂ·2 @"net/url".Values "esc:0x0") Get (@"net/url".keyÂ·3 string "esc:0x0") (? string) { if @"net/url".vÂ·2 == nil { return "" }; var @"net/url".vsÂ·4 []string; ; var @"net/url".okÂ·5 bool; ; @"net/url".vsÂ·4, @"net/url".okÂ·5 = @"net/url".vÂ·2[@"net/url".keyÂ·3]; if !@"net/url".okÂ·5 || len(@"net/url".vsÂ·4) == 0x0 { return "" }; return @"net/url".vsÂ·4[0x0] }
+	func (@"net/url".vÂ·1 @"net/url".Values "esc:0x0") Set (@"net/url".keyÂ·2 string, @"net/url".valueÂ·3 string) { @"net/url".vÂ·1[@"net/url".keyÂ·2] = ([]string{ 0x0:@"net/url".valueÂ·3 }) }
+	type @"net/url".URL struct { Scheme string; Opaque string; User *@"net/url".Userinfo; Host string; Path string; RawQuery string; Fragment string }
+	func (@"net/url".uÂ·2 *@"net/url".URL "esc:0x0") IsAbs () (? bool) { return @"net/url".uÂ·2.Scheme != "" }
+	func (@"net/url".uÂ·3 *@"net/url".URL "esc:0x2") Parse (@"net/url".refÂ·4 string) (? *@"net/url".URL, ? error)
+	func (@"net/url".uÂ·2 *@"net/url".URL) Query () (? @"net/url".Values)
+	func (@"net/url".uÂ·2 *@"net/url".URL "esc:0x1") RequestURI () (? string)
+	func (@"net/url".uÂ·2 *@"net/url".URL "esc:0x2") ResolveReference (@"net/url".refÂ·3 *@"net/url".URL "esc:0x2") (? *@"net/url".URL)
+	func (@"net/url".uÂ·2 *@"net/url".URL "esc:0x0") String () (? string)
+	type @"couchbase".AuthHandler interface { GetCredentials() (? string, ? string) }
+	type @"couchbase".RestPool struct { Name string "json:\"name\""; StreamingURI string "json:\"streamingUri\""; URI string "json:\"uri\"" }
+	type @"couchbase".Pools struct { ComponentsVersion map[string]string "json:\"componentsVersion,omitempty\""; ImplementationVersion string "json:\"implementationVersion\""; IsAdmin bool "json:\"isAdminCreds\""; UUID string "json:\"uuid\""; Pools []@"couchbase".RestPool "json:\"pools\"" }
+	type @"couchbase".NodeServices struct { Services map[string]int "json:\"services,omitempty\""; Hostname string "json:\"hostname\"" }
+	type @"couchbase".PoolServices struct { Rev int "json:\"rev\""; NodesExt []@"couchbase".NodeServices "json:\"nodesExt\"" }
+	type @"couchbase".Client struct { BaseURL *@"net/url".URL; @"couchbase".ah @"couchbase".AuthHandler; Info @"couchbase".Pools }
+	func (@"couchbase".cÂ·3 *@"couchbase".Client) GetPool (@"couchbase".nameÂ·4 string "esc:0x0") (@"couchbase".pÂ·1 @"couchbase".Pool, @"couchbase".errÂ·2 error)
+	func (@"couchbase".cÂ·3 *@"couchbase".Client) GetPoolServices (@"couchbase".nameÂ·4 string "esc:0x0") (@"couchbase".psÂ·1 @"couchbase".PoolServices, @"couchbase".errÂ·2 error)
+	func (@"couchbase".cÂ·2 *@"couchbase".Client) @"couchbase".parseURLResponse (@"couchbase".pathÂ·3 string, @"couchbase".outÂ·4 interface {}) (? error)
+	type @"couchbase".Pool struct { BucketMap map[string]@"couchbase".Bucket; Nodes []@"couchbase".Node; BucketURL map[string]string "json:\"buckets\""; @"couchbase".client @"couchbase".Client }
+	func (@"couchbase".pÂ·3 *@"couchbase".Pool "esc:0x0") GetBucket (@"couchbase".nameÂ·4 string "esc:0x0") (? *@"couchbase".Bucket, ? error)
+	func (@"couchbase".pÂ·2 *@"couchbase".Pool "esc:0x2") GetClient () (? *@"couchbase".Client) { return &@"couchbase".pÂ·2.@"couchbase".client }
+	func (@"couchbase".pÂ·2 *@"couchbase".Pool) @"couchbase".refresh () (@"couchbase".errÂ·1 error)
+	import memcached "gomemcached/client" // indirect
+	import io "io" // indirect
+	type @"io".ReadWriteCloser interface { Close() (? error); Read(@"io".p []byte) (@"io".n int, @"io".err error); Write(@"io".p []byte) (@"io".n int, @"io".err error) }
+	import gomemcached "gomemcached" // indirect
+	type @"gomemcached".CommandCode uint8
+	func (@"gomemcached".oÂ·2 @"gomemcached".CommandCode) IsQuiet () (? bool)
+	func (@"gomemcached".oÂ·2 @"gomemcached".CommandCode) String () (@"gomemcached".rvÂ·1 string)
+	type @"gomemcached".Status uint16
+	func (@"gomemcached".sÂ·2 @"gomemcached".Status) String () (@"gomemcached".rvÂ·1 string)
+	type @"io".Reader interface { Read(@"io".p []byte) (@"io".n int, @"io".err error) }
+	type @"io".Writer interface { Write(@"io".p []byte) (@"io".n int, @"io".err error) }
+	type @"gomemcached".MCResponse struct { Opcode @"gomemcached".CommandCode; Status @"gomemcached".Status; Opaque uint32; Cas uint64; Extras []byte; Key []byte; Body []byte; Fatal bool }
+	func (@"gomemcached".resÂ·2 *@"gomemcached".MCResponse "esc:0x0") Bytes () (? []byte)
+	func (@"gomemcached".resÂ·2 *@"gomemcached".MCResponse "esc:0x0") Error () (? string)
+	func (@"gomemcached".resÂ·2 *@"gomemcached".MCResponse "esc:0x0") HeaderBytes () (? []byte)
+	func (@"gomemcached".resÂ·3 *@"gomemcached".MCResponse "esc:0x0") Receive (@"gomemcached".rÂ·4 @"io".Reader, @"gomemcached".hdrBytesÂ·5 []byte) (? int, ? error)
+	func (@"gomemcached".resÂ·2 *@"gomemcached".MCResponse "esc:0x0") Size () (? int) { return 0x18 + len(@"gomemcached".resÂ·2.Extras) + len(@"gomemcached".resÂ·2.Key) + len(@"gomemcached".resÂ·2.Body) }
+	func (@"gomemcached".resÂ·2 @"gomemcached".MCResponse "esc:0x0") String () (? string)
+	func (@"gomemcached".resÂ·3 *@"gomemcached".MCResponse) Transmit (@"gomemcached".wÂ·4 @"io".Writer) (@"gomemcached".nÂ·1 int, @"gomemcached".errÂ·2 error)
+	func (@"gomemcached".resÂ·2 *@"gomemcached".MCResponse "esc:0x0") @"gomemcached".fillHeaderBytes (@"gomemcached".dataÂ·3 []byte "esc:0x0") (? int)
+	type @"gomemcached/client".CasOp uint8
+	func (@"gomemcached/client".cÂ·2 @"gomemcached/client".CasOp) Error () (? string)
+	type @"gomemcached/client".CasFunc func(@"gomemcached/client".current []byte) (? []byte, ? @"gomemcached/client".CasOp)
+	type @"gomemcached/client".CASState struct { @"gomemcached/client".initialized bool; Value []byte; Cas uint64; Exists bool; Err error; @"gomemcached/client".resp *@"gomemcached".MCResponse }
+	import sync "sync" // indirect
+	type @"sync".Mutex struct { @"sync".state int32; @"sync".sema uint32 }
+	func (@"sync".mÂ·1 *@"sync".Mutex) Lock ()
+	func (@"sync".mÂ·1 *@"sync".Mutex) Unlock ()
+	type @"sync".Locker interface { Lock(); Unlock() }
+	type @"sync".RWMutex struct { @"sync".w @"sync".Mutex; @"sync".writerSem uint32; @"sync".readerSem uint32; @"sync".readerCount int32; @"sync".readerWait int32 }
+	func (@"sync".rwÂ·1 *@"sync".RWMutex) Lock ()
+	func (@"sync".rwÂ·1 *@"sync".RWMutex) RLock ()
+	func (@"sync".rwÂ·2 *@"sync".RWMutex "esc:0x2") RLocker () (? @"sync".Locker) { return (*@"sync".rlocker)(@"sync".rwÂ·2) }
+	func (@"sync".rwÂ·1 *@"sync".RWMutex) RUnlock ()
+	func (@"sync".rwÂ·1 *@"sync".RWMutex) Unlock ()
+	type @"gomemcached/client".FailoverLog [][2]uint64
+	func (@"gomemcached/client".flogpÂ·4 *@"gomemcached/client".FailoverLog "esc:0x0") Latest () (@"gomemcached/client".vbuuidÂ·1 uint64, @"gomemcached/client".seqnoÂ·2 uint64, @"gomemcached/client".errÂ·3 error) { if @"gomemcached/client".flogpÂ·4 != nil { var @"gomemcached/client".flogÂ·5 @"gomemcached/client".FailoverLog; ; @"gomemcached/client".flogÂ·5 = *@"gomemcached/client".flogpÂ·4; var @"gomemcached/client".latestÂ·6 [2]uint64; ; @"gomemcached/client".latestÂ·6 = @"gomemcached/client".flogÂ·5[len(@"gomemcached/client".flogÂ·5) - 0x1]; return @"gomemcached/client".latestÂ·6[0x0], @"gomemcached/client".latestÂ·6[0x1], nil }; return @"gomemcached/client".vbuuidÂ·1, @"gomemcached/client".seqnoÂ·2, @"gomemcached/client".ErrorInvalidLog }
+	type @"gomemcached/client".UprEvent struct { Opcode @"gomemcached".CommandCode; Status @"gomemcached".Status; VBucket uint16; Opaque uint16; VBuuid uint64; Flags uint32; Expiry uint32; Key []byte; Value []byte; OldValue []byte; Cas uint64; Seqno uint64; SnapstartSeq uint64; SnapendSeq uint64; SnapshotType uint32; FailoverLog *@"gomemcached/client".FailoverLog; Error error }
+	func (@"gomemcached/client".eventÂ·2 *@"gomemcached/client".UprEvent "esc:0x0") String () (? string)
+	type @"gomemcached/client".UprStream struct { Vbucket uint16; Vbuuid uint64; StartSeq uint64; EndSeq uint64; @"gomemcached/client".connected bool }
+	type @"gomemcached/client".UprStats struct { TotalBytes uint64; TotalMutation uint64; TotalBufferAckSent uint64; TotalSnapShot uint64 }
+	type @"gomemcached".TapConnectFlag uint32
+	func (@"gomemcached".fÂ·2 @"gomemcached".TapConnectFlag) SplitFlags () (? []@"gomemcached".TapConnectFlag)
+	func (@"gomemcached".fÂ·2 @"gomemcached".TapConnectFlag) String () (? string)
+	type @"gomemcached".TapConnect struct { Flags map[@"gomemcached".TapConnectFlag]interface {}; RemainingBody []byte; Name string }
+	type @"gomemcached".MCRequest struct { Opcode @"gomemcached".CommandCode; Cas uint64; Opaque uint32; VBucket uint16; Extras []byte; Key []byte; Body []byte }
+	func (@"gomemcached".reqÂ·2 *@"gomemcached".MCRequest "esc:0x0") Bytes () (? []byte)
+	func (@"gomemcached".reqÂ·2 *@"gomemcached".MCRequest "esc:0x0") HeaderBytes () (? []byte)
+	func (@"gomemcached".reqÂ·3 *@"gomemcached".MCRequest) ParseTapCommands () (? @"gomemcached".TapConnect, ? error)
+	func (@"gomemcached".reqÂ·3 *@"gomemcached".MCRequest "esc:0x0") Receive (@"gomemcached".rÂ·4 @"io".Reader, @"gomemcached".hdrBytesÂ·5 []byte) (? int, ? error)
+	func (@"gomemcached".reqÂ·2 *@"gomemcached".MCRequest "esc:0x0") Size () (? int) { return 0x18 + len(@"gomemcached".reqÂ·2.Extras) + len(@"gomemcached".reqÂ·2.Key) + len(@"gomemcached".reqÂ·2.Body) }
+	func (@"gomemcached".reqÂ·2 @"gomemcached".MCRequest) String () (? string)
+	func (@"gomemcached".reqÂ·3 *@"gomemcached".MCRequest) Transmit (@"gomemcached".wÂ·4 @"io".Writer) (@"gomemcached".nÂ·1 int, @"gomemcached".errÂ·2 error)
+	func (@"gomemcached".reqÂ·2 *@"gomemcached".MCRequest "esc:0x0") @"gomemcached".fillHeaderBytes (@"gomemcached".dataÂ·3 []byte "esc:0x0") (? int)
+	type @"gomemcached/client".UprFeed struct { @"gomemcached/client".mu @"sync".RWMutex; C <-chan *@"gomemcached/client".UprEvent; @"gomemcached/client".vbstreams map[uint16]*@"gomemcached/client".UprStream; @"gomemcached/client".closer chan bool; @"gomemcached/client".conn *@"gomemcached/client".Client; Error error; @"gomemcached/client".bytesRead uint64; @"gomemcached/client".toAckBytes uint32; @"gomemcached/client".maxAckBytes uint32; @"gomemcached/client".stats @"gomemcached/client".UprStats; @"gomemcached/client".transmitCh chan *@"gomemcached".MCRequest; @"gomemcached/client".transmitCl chan bool }
+	func (@"gomemcached/client".feedÂ·1 *@"gomemcached/client".UprFeed "esc:0x0") Close () { close(@"gomemcached/client".feedÂ·1.@"gomemcached/client".closer) }
+	func (@"gomemcached/client".feedÂ·2 *@"gomemcached/client".UprFeed) CloseStream (@"gomemcached/client".vbnoÂ·3 uint16, @"gomemcached/client".opaqueMSBÂ·4 uint16) (? error)
+	func (@"gomemcached/client".feedÂ·2 *@"gomemcached/client".UprFeed "esc:0x2") GetUprStats () (? *@"gomemcached/client".UprStats) { return &@"gomemcached/client".feedÂ·2.@"gomemcached/client".stats }
+	func (@"gomemcached/client".feedÂ·3 *@"gomemcached/client".UprFeed "esc:0x0") SendBufferAck (@"gomemcached/client".sendAckÂ·4 bool, @"gomemcached/client".bytesÂ·5 uint32) (? bool, ? uint32) { if @"gomemcached/client".sendAckÂ·4 { var @"gomemcached/client".totalBytesÂ·6 uint32; ; @"gomemcached/client".totalBytesÂ·6 = @"gomemcached/client".feedÂ·3.@"gomemcached/client".toAckBytes + @"gomemcached/client".bytesÂ·5; if @"gomemcached/client".totalBytesÂ·6 > @"gomemcached/client".feedÂ·3.@"gomemcached/client".maxAckBytes { @"gomemcached/client".feedÂ·3.@"gomemcached/client".toAckBytes = 0x0; return true, @"gomemcached/client".totalBytesÂ·6 }; @"gomemcached/client".feedÂ·3.@"gomemcached/client".toAckBytes += @"gomemcached/client".bytesÂ·5 }; return false, 0x0 }
+	func (@"gomemcached/client".feedÂ·2 *@"gomemcached/client".UprFeed) StartFeed () (? error)
+	func (@"gomemcached/client".feedÂ·2 *@"gomemcached/client".UprFeed) UprOpen (@"gomemcached/client".nameÂ·3 string "esc:0x0", @"gomemcached/client".sequenceÂ·4 uint32, @"gomemcached/client".bufSizeÂ·5 uint32) (? error)
+	func (@"gomemcached/client".feedÂ·2 *@"gomemcached/client".UprFeed) UprRequestStream (@"gomemcached/client".vbnoÂ·3 uint16, @"gomemcached/client".opaqueMSBÂ·4 uint16, @"gomemcached/client".flagsÂ·5 uint32, @"gomemcached/client".vuuidÂ·6 uint64, @"gomemcached/client".startSequenceÂ·7 uint64, @"gomemcached/client".endSequenceÂ·8 uint64, @"gomemcached/client".snapStartÂ·9 uint64, @"gomemcached/client".snapEndÂ·10 uint64) (? error)
+	func (@"gomemcached/client".feedÂ·1 *@"gomemcached/client".UprFeed) @"gomemcached/client".doStreamClose (@"gomemcached/client".chÂ·2 chan *@"gomemcached/client".UprEvent "esc:0x0")
+	func (@"gomemcached/client".feedÂ·1 *@"gomemcached/client".UprFeed) @"gomemcached/client".runFeed (@"gomemcached/client".chÂ·2 chan *@"gomemcached/client".UprEvent "esc:0x0")
+	type @"gomemcached/client".ObservedStatus uint8
+	type @"gomemcached/client".ObserveResult struct { Status @"gomemcached/client".ObservedStatus; Cas uint64; PersistenceTime @"time".Duration; ReplicationTime @"time".Duration }
+	func (@"gomemcached/client".resultÂ·3 @"gomemcached/client".ObserveResult) CheckPersistence (@"gomemcached/client".casÂ·4 uint64, @"gomemcached/client".deletionÂ·5 bool) (@"gomemcached/client".persistedÂ·1 bool, @"gomemcached/client".overwrittenÂ·2 bool)
+	type @"gomemcached/client".TapOpcode uint8
+	func (@"gomemcached/client".opcodeÂ·2 @"gomemcached/client".TapOpcode) String () (? string)
+	type @"gomemcached/client".TapEvent struct { Opcode @"gomemcached/client".TapOpcode; VBucket uint16; Flags uint32; Expiry uint32; Key []byte; Value []byte; Cas uint64 }
+	func (@"gomemcached/client".eventÂ·2 @"gomemcached/client".TapEvent) String () (? string)
+	type @"gomemcached/client".TapFeed struct { C <-chan @"gomemcached/client".TapEvent; Error error; @"gomemcached/client".closer chan bool }
+	func (@"gomemcached/client".feedÂ·1 *@"gomemcached/client".TapFeed "esc:0x0") Close () { close(@"gomemcached/client".feedÂ·1.@"gomemcached/client".closer) }
+	type @"gomemcached/client".TapArguments struct { Backfill uint64; Dump bool; VBuckets []uint16; Takeover bool; SupportAck bool; KeysOnly bool; Checkpoint bool; ClientName string; RegisteredClient bool }
+	func (@"gomemcached/client".argsÂ·2 *@"gomemcached/client".TapArguments "esc:0x0") @"gomemcached/client".bytes () (@"gomemcached/client".rvÂ·1 []byte)
+	func (@"gomemcached/client".argsÂ·2 *@"gomemcached/client".TapArguments "esc:0x0") @"gomemcached/client".flags () (? []byte)
+	type @"gomemcached/client".StatValue struct { Key string; Val string }
+	type @"gomemcached/client".Client struct { @"gomemcached/client".conn @"io".ReadWriteCloser; @"gomemcached/client".healthy bool; @"gomemcached/client".hdrBuf []byte }
+	func (@"gomemcached/client".cÂ·3 *@"gomemcached/client".Client) Add (@"gomemcached/client".vbÂ·4 uint16, @"gomemcached/client".keyÂ·5 string "esc:0x0", @"gomemcached/client".flagsÂ·6 int, @"gomemcached/client".expÂ·7 int, @"gomemcached/client".bodyÂ·8 []byte) (? *@"gomemcached".MCResponse, ? error)
+	func (@"gomemcached/client".cÂ·3 *@"gomemcached/client".Client) Append (@"gomemcached/client".vbÂ·4 uint16, @"gomemcached/client".keyÂ·5 string "esc:0x0", @"gomemcached/client".dataÂ·6 []byte) (? *@"gomemcached".MCResponse, ? error)
+	func (@"gomemcached/client".cÂ·3 *@"gomemcached/client".Client) Auth (@"gomemcached/client".userÂ·4 string, @"gomemcached/client".passÂ·5 string) (? *@"gomemcached".MCResponse, ? error)
+	func (@"gomemcached/client".cÂ·3 *@"gomemcached/client".Client) AuthList () (? *@"gomemcached".MCResponse, ? error)
+	func (@"gomemcached/client".cÂ·3 *@"gomemcached/client".Client) CAS (@"gomemcached/client".vbÂ·4 uint16, @"gomemcached/client".kÂ·5 string "esc:0x0", @"gomemcached/client".fÂ·6 @"gomemcached/client".CasFunc "esc:0x0", @"gomemcached/client".initexpÂ·7 int) (? *@"gomemcached".MCResponse, ? error)
+	func (@"gomemcached/client".cÂ·2 *@"gomemcached/client".Client) CASNext (@"gomemcached/client".vbÂ·3 uint16, @"gomemcached/client".kÂ·4 string "esc:0x0", @"gomemcached/client".expÂ·5 int, @"gomemcached/client".stateÂ·6 *@"gomemcached/client".CASState) (? bool)
+	func (@"gomemcached/client".cÂ·2 *@"gomemcached/client".Client) Close () (? error)
+	func (@"gomemcached/client".cÂ·3 *@"gomemcached/client".Client) Del (@"gomemcached/client".vbÂ·4 uint16, @"gomemcached/client".keyÂ·5 string "esc:0x0") (? *@"gomemcached".MCResponse, ? error)
+	func (@"gomemcached/client".cÂ·3 *@"gomemcached/client".Client) Get (@"gomemcached/client".vbÂ·4 uint16, @"gomemcached/client".keyÂ·5 string "esc:0x0") (? *@"gomemcached".MCResponse, ? error)
+	func (@"gomemcached/client".cÂ·3 *@"gomemcached/client".Client) GetBulk (@"gomemcached/client".vbÂ·4 uint16, @"gomemcached/client".keysÂ·5 []string) (? map[string]*@"gomemcached".MCResponse, ? error)
+	func (@"gomemcached/client".cÂ·2 *@"gomemcached/client".Client "esc:0x1") Hijack () (? @"io".ReadWriteCloser) { @"gomemcached/client".cÂ·2.@"gomemcached/client".healthy = false; return @"gomemcached/client".cÂ·2.@"gomemcached/client".conn }
+	func (@"gomemcached/client".cÂ·3 *@"gomemcached/client".Client) Incr (@"gomemcached/client".vbÂ·4 uint16, @"gomemcached/client".keyÂ·5 string "esc:0x0", @"gomemcached/client".amtÂ·6 uint64, @"gomemcached/client".defÂ·7 uint64, @"gomemcached/client".expÂ·8 int) (? uint64, ? error)
+	func (@"gomemcached/client".cÂ·2 @"gomemcached/client".Client "esc:0x0") IsHealthy () (? bool) { return @"gomemcached/client".cÂ·2.@"gomemcached/client".healthy }
+	func (@"gomemcached/client".mcÂ·3 *@"gomemcached/client".Client) NewUprFeed () (? *@"gomemcached/client".UprFeed, ? error)
+	func (@"gomemcached/client".cÂ·3 *@"gomemcached/client".Client) Observe (@"gomemcached/client".vbÂ·4 uint16, @"gomemcached/client".keyÂ·5 string "esc:0x0") (@"gomemcached/client".resultÂ·1 @"gomemcached/client".ObserveResult, @"gomemcached/client".errÂ·2 error)
+	func (@"gomemcached/client".cÂ·3 *@"gomemcached/client".Client) Receive () (? *@"gomemcached".MCResponse, ? error)
+	func (@"gomemcached/client".cÂ·3 *@"gomemcached/client".Client) Send (@"gomemcached/client".reqÂ·4 *@"gomemcached".MCRequest) (@"gomemcached/client".rvÂ·1 *@"gomemcached".MCResponse, @"gomemcached/client".errÂ·2 error)
+	func (@"gomemcached/client".cÂ·3 *@"gomemcached/client".Client) Set (@"gomemcached/client".vbÂ·4 uint16, @"gomemcached/client".keyÂ·5 string "esc:0x0", @"gomemcached/client".flagsÂ·6 int, @"gomemcached/client".expÂ·7 int, @"gomemcached/client".bodyÂ·8 []byte) (? *@"gomemcached".MCResponse, ? error)
+	func (@"gomemcached/client".cÂ·3 *@"gomemcached/client".Client) SetCas (@"gomemcached/client".vbÂ·4 uint16, @"gomemcached/client".keyÂ·5 string "esc:0x0", @"gomemcached/client".flagsÂ·6 int, @"gomemcached/client".expÂ·7 int, @"gomemcached/client".casÂ·8 uint64, @"gomemcached/client".bodyÂ·9 []byte) (? *@"gomemcached".MCResponse, ? error)
+	func (@"gomemcached/client".mcÂ·3 *@"gomemcached/client".Client) StartTapFeed (@"gomemcached/client".argsÂ·4 @"gomemcached/client".TapArguments "esc:0x0") (? *@"gomemcached/client".TapFeed, ? error)
+	func (@"gomemcached/client".cÂ·3 *@"gomemcached/client".Client) Stats (@"gomemcached/client".keyÂ·4 string "esc:0x0") (? []@"gomemcached/client".StatValue, ? error)
+	func (@"gomemcached/client".cÂ·3 *@"gomemcached/client".Client) StatsMap (@"gomemcached/client".keyÂ·4 string "esc:0x0") (? map[string]string, ? error)
+	func (@"gomemcached/client".cÂ·2 *@"gomemcached/client".Client) Transmit (@"gomemcached/client".reqÂ·3 *@"gomemcached".MCRequest) (? error)
+	func (@"gomemcached/client".mcÂ·3 *@"gomemcached/client".Client) UprGetFailoverLog (@"gomemcached/client".vbÂ·4 []uint16) (? map[uint16]*@"gomemcached/client".FailoverLog, ? error)
+	func (@"gomemcached/client".mcÂ·1 *@"gomemcached/client".Client) @"gomemcached/client".runFeed (@"gomemcached/client".chÂ·2 chan @"gomemcached/client".TapEvent "esc:0x0", @"gomemcached/client".feedÂ·3 *@"gomemcached/client".TapFeed "esc:0x0")
+	func (@"gomemcached/client".mcÂ·3 *@"gomemcached/client".Client) @"gomemcached/client".sendAck (@"gomemcached/client".pktÂ·4 *@"gomemcached".MCRequest "esc:0x0") (? int, ? error)
+	func (@"gomemcached/client".cÂ·3 *@"gomemcached/client".Client) @"gomemcached/client".store (@"gomemcached/client".opcodeÂ·4 @"gomemcached".CommandCode, @"gomemcached/client".vbÂ·5 uint16, @"gomemcached/client".keyÂ·6 string "esc:0x0", @"gomemcached/client".flagsÂ·7 int, @"gomemcached/client".expÂ·8 int, @"gomemcached/client".bodyÂ·9 []byte) (? *@"gomemcached".MCResponse, ? error)
+	func (@"gomemcached/client".cÂ·3 *@"gomemcached/client".Client) @"gomemcached/client".storeCas (@"gomemcached/client".opcodeÂ·4 @"gomemcached".CommandCode, @"gomemcached/client".vbÂ·5 uint16, @"gomemcached/client".keyÂ·6 string "esc:0x0", @"gomemcached/client".flagsÂ·7 int, @"gomemcached/client".expÂ·8 int, @"gomemcached/client".casÂ·9 uint64, @"gomemcached/client".bodyÂ·10 []byte) (? *@"gomemcached".MCResponse, ? error)
+	type @"couchbase".ViewDefinition struct { Map string "json:\"map\""; Reduce string "json:\"reduce,omitempty\"" }
+	type @"couchbase".DDoc struct { Language string "json:\"language,omitempty\""; Views map[string]@"couchbase".ViewDefinition "json:\"views\"" }
+	type @"couchbase".DDocsResult struct { Rows []struct { DDoc struct { Meta map[string]interface {}; JSON @"couchbase".DDoc } "json:\"doc\"" } "json:\"rows\"" }
+	type @"couchbase".FailoverLog map[uint16]@"gomemcached/client".FailoverLog
+	type @"couchbase".TapFeed struct { C <-chan @"gomemcached/client".TapEvent; @"couchbase".bucket *@"couchbase".Bucket; @"couchbase".args *@"gomemcached/client".TapArguments; @"couchbase".nodeFeeds []*@"gomemcached/client".TapFeed; @"couchbase".output chan @"gomemcached/client".TapEvent; @"couchbase".quit chan bool }
+	func (@"couchbase".feedÂ·2 *@"couchbase".TapFeed "esc:0x0") Close () (? error)
+	func (@"couchbase".feedÂ·1 *@"couchbase".TapFeed "esc:0x0") @"couchbase".closeNodeFeeds ()
+	func (@"couchbase".feedÂ·3 *@"couchbase".TapFeed) @"couchbase".connectToNodes () (@"couchbase".killSwitchÂ·1 chan bool, @"couchbase".errÂ·2 error)
+	func (@"couchbase".feedÂ·1 *@"couchbase".TapFeed "esc:0x0") @"couchbase".forwardTapEvents (@"couchbase".singleFeedÂ·2 *@"gomemcached/client".TapFeed, @"couchbase".killSwitchÂ·3 chan bool "esc:0x0", @"couchbase".hostÂ·4 string)
+	func (@"couchbase".feedÂ·1 *@"couchbase".TapFeed) @"couchbase".run ()
+	type @"couchbase".FeedInfo struct { @"couchbase".uprFeed *@"gomemcached/client".UprFeed; @"couchbase".host string; @"couchbase".connected bool }
+	type @"sync".WaitGroup struct { @"sync".m @"sync".Mutex; @"sync".counter int32; @"sync".waiters int32; @"sync".sema *uint32 }
+	func (@"sync".wgÂ·1 *@"sync".WaitGroup) Add (@"sync".deltaÂ·2 int)
+	func (@"sync".wgÂ·1 *@"sync".WaitGroup) Done ()
+	func (@"sync".wgÂ·1 *@"sync".WaitGroup) Wait ()
+	type @"couchbase".UprFeed struct { C <-chan *@"gomemcached/client".UprEvent; @"couchbase".bucket *@"couchbase".Bucket; @"couchbase".nodeFeeds map[string]*@"couchbase".FeedInfo; @"couchbase".output chan *@"gomemcached/client".UprEvent; @"couchbase".quit chan bool; @"couchbase".name string; @"couchbase".sequence uint32; @"couchbase".connected bool; @"couchbase".killSwitch chan bool; @"couchbase".closing bool; @"couchbase".wg @"sync".WaitGroup }
+	func (@"couchbase".feedÂ·2 *@"couchbase".UprFeed "esc:0x0") Close () (? error)
+	func (@"couchbase".feedÂ·2 *@"couchbase".UprFeed) UprCloseStream (@"couchbase".vbÂ·3 uint16, @"couchbase".opaqueMSBÂ·4 uint16) (? error)
+	func (@"couchbase".feedÂ·2 *@"couchbase".UprFeed) UprRequestStream (@"couchbase".vbÂ·3 uint16, @"couchbase".opaqueÂ·4 uint16, @"couchbase".flagsÂ·5 uint32, @"couchbase".vuuidÂ·6 uint64, @"couchbase".startSequenceÂ·7 uint64, @"couchbase".endSequenceÂ·8 uint64, @"couchbase".snapStartÂ·9 uint64, @"couchbase".snapEndÂ·10 uint64) (? error)
+	func (@"couchbase".feedÂ·1 *@"couchbase".UprFeed "esc:0x0") @"couchbase".closeNodeFeeds ()
+	func (@"couchbase".feedÂ·2 *@"couchbase".UprFeed) @"couchbase".connectToNodes () (@"couchbase".errÂ·1 error)
+	func (@"couchbase".feedÂ·1 *@"couchbase".UprFeed) @"couchbase".forwardUprEvents (@"couchbase".nodeFeedÂ·2 *@"couchbase".FeedInfo, @"couchbase".killSwitchÂ·3 chan bool "esc:0x0", @"couchbase".hostÂ·4 string)
+	func (@"couchbase".feedÂ·1 *@"couchbase".UprFeed) @"couchbase".run ()
+	type @"couchbase".UpdateFunc func(@"couchbase".current []byte) (@"couchbase".updated []byte, @"couchbase".err error)
+	type @"couchbase".ViewRow struct { ID string; Key interface {}; Value interface {}; Doc *interface {} }
+	type @"couchbase".ViewError struct { From string; Reason string }
+	func (@"couchbase".veÂ·2 @"couchbase".ViewError "esc:0x0") Error () (? string) { return "Node: " + @"couchbase".veÂ·2.From + ", reason: " + @"couchbase".veÂ·2.Reason }
+	type @"couchbase".ViewResult struct { TotalRows int "json:\"total_rows\""; Rows []@"couchbase".ViewRow; Errors []@"couchbase".ViewError }
+	type @"couchbase".WriteOptions int
+	func (@"couchbase".wÂ·2 @"couchbase".WriteOptions) String () (? string)
+	type @"couchbase".WriteUpdateFunc func(@"couchbase".current []byte) (@"couchbase".updated []byte, @"couchbase".opt @"couchbase".WriteOptions, @"couchbase".err error)
+	type @"couchbase".connectionPool struct { @"couchbase".host string; @"couchbase".mkConn func(@"couchbase".host string, @"couchbase".ah @"couchbase".AuthHandler) (? *@"gomemcached/client".Client, ? error); @"couchbase".auth @"couchbase".AuthHandler; @"couchbase".connections chan *@"gomemcached/client".Client; @"couchbase".createsem chan bool }
+	func (@"couchbase".cpÂ·2 *@"couchbase".connectionPool "esc:0x0") Close () (@"couchbase".errÂ·1 error)
+	func (@"couchbase".cpÂ·3 *@"couchbase".connectionPool) Get () (? *@"gomemcached/client".Client, ? error)
+	func (@"couchbase".cpÂ·3 *@"couchbase".connectionPool) GetWithTimeout (@"couchbase".dÂ·4 @"time".Duration) (@"couchbase".rvÂ·1 *@"gomemcached/client".Client, @"couchbase".errÂ·2 error)
+	func (@"couchbase".cpÂ·1 *@"couchbase".connectionPool "esc:0x0") Return (@"couchbase".cÂ·2 *@"gomemcached/client".Client)
+	func (@"couchbase".cpÂ·3 *@"couchbase".connectionPool) StartTapFeed (@"couchbase".argsÂ·4 *@"gomemcached/client".TapArguments "esc:0x0") (? *@"gomemcached/client".TapFeed, ? error)
+	func (@"couchbase".cpÂ·3 *@"couchbase".connectionPool) StartUprFeed (@"couchbase".nameÂ·4 string "esc:0x0", @"couchbase".sequenceÂ·5 uint32) (? *@"gomemcached/client".UprFeed, ? error)
+	type @"couchbase".Bucket struct { AuthType string "json:\"authType\""; Capabilities []string "json:\"bucketCapabilities\""; CapabilitiesVersion string "json:\"bucketCapabilitiesVer\""; Type string "json:\"bucketType\""; Name string "json:\"name\""; NodeLocator string "json:\"nodeLocator\""; Quota map[string]float64 "json:\"quota,omitempty\""; Replicas int "json:\"replicaNumber\""; Password string "json:\"saslPassword\""; URI string "json:\"uri\""; StreamingURI string "json:\"streamingUri\""; LocalRandomKeyURI string "json:\"localRandomKeyUri,omitempty\""; UUID string "json:\"uuid\""; DDocs struct { URI string "json:\"uri\"" } "json:\"ddocs,omitempty\""; BasicStats map[string]interface {} "json:\"basicStats,omitempty\""; Controllers map[string]interface {} "json:\"controllers,omitempty\""; VBSMJson @"couchbase".VBucketServerMap "json:\"vBucketServerMap\""; NodesJSON []@"couchbase".Node "json:\"nodes\""; @"couchbase".pool *@"couchbase".Pool; @"couchbase".connPools @"unsafe".Pointer; @"couchbase".vBucketServerMap @"unsafe".Pointer; @"couchbase".nodeList @"unsafe".Pointer; @"couchbase".commonSufix string }
+	func (@"couchbase".bÂ·3 *@"couchbase".Bucket) Add (@"couchbase".kÂ·4 string, @"couchbase".expÂ·5 int, @"couchbase".vÂ·6 interface {}) (@"couchbase".addedÂ·1 bool, @"couchbase".errÂ·2 error)
+	func (@"couchbase".bÂ·3 *@"couchbase".Bucket) AddRaw (@"couchbase".kÂ·4 string, @"couchbase".expÂ·5 int, @"couchbase".vÂ·6 []byte) (@"couchbase".addedÂ·1 bool, @"couchbase".errÂ·2 error)
+	func (@"couchbase".bÂ·2 *@"couchbase".Bucket) Append (@"couchbase".kÂ·3 string, @"couchbase".dataÂ·4 []byte) (? error)
+	func (@"couchbase".bÂ·2 *@"couchbase".Bucket) Cas (@"couchbase".kÂ·3 string, @"couchbase".expÂ·4 int, @"couchbase".casÂ·5 uint64, @"couchbase".vÂ·6 interface {}) (? error)
+	func (@"couchbase".bÂ·2 *@"couchbase".Bucket) CasRaw (@"couchbase".kÂ·3 string, @"couchbase".expÂ·4 int, @"couchbase".casÂ·5 uint64, @"couchbase".vÂ·6 interface {}) (? error)
+	func (@"couchbase".bÂ·1 *@"couchbase".Bucket) Close ()
+	func (@"couchbase".bÂ·2 @"couchbase".Bucket) CommonAddressSuffix () (? string)
+	func (@"couchbase".bÂ·2 *@"couchbase".Bucket) Delete (@"couchbase".kÂ·3 string) (? error)
+	func (@"couchbase".bÂ·2 *@"couchbase".Bucket) DeleteDDoc (@"couchbase".docnameÂ·3 string) (? error)
+	func (@"couchbase".bÂ·2 *@"couchbase".Bucket) Do (@"couchbase".kÂ·3 string, @"couchbase".fÂ·4 func(@"couchbase".mc *@"gomemcached/client".Client, @"couchbase".vb uint16) (? error) "esc:0x0") (@"couchbase".errÂ·1 error)
+	func (@"couchbase".bÂ·2 *@"couchbase".Bucket) Get (@"couchbase".kÂ·3 string, @"couchbase".rvÂ·4 interface {}) (? error)
+	func (@"couchbase".bÂ·3 *@"couchbase".Bucket) GetBulk (@"couchbase".keysÂ·4 []string "esc:0x0") (? map[string]*@"gomemcached".MCResponse, ? error)
+	func (@"couchbase".bÂ·2 *@"couchbase".Bucket) GetDDoc (@"couchbase".docnameÂ·3 string, @"couchbase".intoÂ·4 interface {}) (? error)
+	func (@"couchbase".bÂ·3 *@"couchbase".Bucket) GetDDocs () (? @"couchbase".DDocsResult, ? error)
+	func (@"couchbase".bÂ·3 *@"couchbase".Bucket) GetFailoverLogs (@"couchbase".vBucketsÂ·4 []uint16) (? @"couchbase".FailoverLog, ? error)
+	func (@"couchbase".bÂ·2 *@"couchbase".Bucket "esc:0x1") GetPool () (? *@"couchbase".Pool) { return @"couchbase".bÂ·2.@"couchbase".pool }
+	func (@"couchbase".bÂ·3 *@"couchbase".Bucket) GetRaw (@"couchbase".kÂ·4 string) (? []byte, ? error)
+	func (@"couchbase".bÂ·2 *@"couchbase".Bucket) GetStats (@"couchbase".whichÂ·3 string) (? map[string]map[string]string)
+	func (@"couchbase".bÂ·3 *@"couchbase".Bucket) GetVBmap (@"couchbase".addrsÂ·4 []string "esc:0x0") (? map[string][]uint16, ? error)
+	func (@"couchbase".bÂ·2 *@"couchbase".Bucket) Gets (@"couchbase".kÂ·3 string, @"couchbase".rvÂ·4 interface {}, @"couchbase".casoÂ·5 *uint64 "esc:0x0") (? error)
+	func (@"couchbase".bÂ·5 *@"couchbase".Bucket) GetsRaw (@"couchbase".kÂ·6 string) (@"couchbase".dataÂ·1 []byte, @"couchbase".flagsÂ·2 int, @"couchbase".casÂ·3 uint64, @"couchbase".errÂ·4 error)
+	func (@"couchbase".bÂ·3 *@"couchbase".Bucket) Incr (@"couchbase".kÂ·4 string, @"couchbase".amtÂ·5 uint64, @"couchbase".defÂ·6 uint64, @"couchbase".expÂ·7 int) (@"couchbase".valÂ·1 uint64, @"couchbase".errÂ·2 error)
+	func (@"couchbase".bÂ·2 @"couchbase".Bucket) NodeAddresses () (? []string)
+	func (@"couchbase".bÂ·2 @"couchbase".Bucket) Nodes () (? []@"couchbase".Node)
+	func (@"couchbase".bÂ·3 *@"couchbase".Bucket) Observe (@"couchbase".kÂ·4 string) (@"couchbase".resultÂ·1 @"gomemcached/client".ObserveResult, @"couchbase".errÂ·2 error)
+	func (@"couchbase".bÂ·2 *@"couchbase".Bucket) PutDDoc (@"couchbase".docnameÂ·3 string, @"couchbase".valueÂ·4 interface {}) (? error)
+	func (@"couchbase".bÂ·2 *@"couchbase".Bucket) Refresh () (? error)
+	func (@"couchbase".bÂ·2 *@"couchbase".Bucket) Set (@"couchbase".kÂ·3 string, @"couchbase".expÂ·4 int, @"couchbase".vÂ·5 interface {}) (? error)
+	func (@"couchbase".bÂ·2 *@"couchbase".Bucket) SetRaw (@"couchbase".kÂ·3 string, @"couchbase".expÂ·4 int, @"couchbase".vÂ·5 []byte) (? error)
+	func (@"couchbase".bÂ·3 *@"couchbase".Bucket) StartTapFeed (@"couchbase".argsÂ·4 *@"gomemcached/client".TapArguments) (? *@"couchbase".TapFeed, ? error)
+	func (@"couchbase".bÂ·3 *@"couchbase".Bucket) StartUprFeed (@"couchbase".nameÂ·4 string, @"couchbase".sequenceÂ·5 uint32) (? *@"couchbase".UprFeed, ? error)
+	func (@"couchbase".bÂ·2 *@"couchbase".Bucket) Update (@"couchbase".kÂ·3 string, @"couchbase".expÂ·4 int, @"couchbase".callbackÂ·5 @"couchbase".UpdateFunc "esc:0x0") (? error)
+	func (@"couchbase".bÂ·2 *@"couchbase".Bucket) VBHash (@"couchbase".keyÂ·3 string "esc:0x0") (? uint32)
+	func (@"couchbase".bÂ·2 *@"couchbase".Bucket) VBServerMap () (? *@"couchbase".VBucketServerMap)
+	func (@"couchbase".bÂ·3 *@"couchbase".Bucket) View (@"couchbase".ddocÂ·4 string, @"couchbase".nameÂ·5 string, @"couchbase".paramsÂ·6 map[string]interface {} "esc:0x0") (? @"couchbase".ViewResult, ? error)
+	func (@"couchbase".bÂ·2 *@"couchbase".Bucket) ViewCustom (@"couchbase".ddocÂ·3 string, @"couchbase".nameÂ·4 string, @"couchbase".paramsÂ·5 map[string]interface {} "esc:0x0", @"couchbase".vresÂ·6 interface {}) (@"couchbase".errÂ·1 error)
+	func (@"couchbase".bÂ·3 *@"couchbase".Bucket) ViewURL (@"couchbase".ddocÂ·4 string, @"couchbase".nameÂ·5 string, @"couchbase".paramsÂ·6 map[string]interface {} "esc:0x0") (? string, ? error)
+	func (@"couchbase".bÂ·2 *@"couchbase".Bucket) WaitForPersistence (@"couchbase".kÂ·3 string, @"couchbase".casÂ·4 uint64, @"couchbase".deletionÂ·5 bool) (? error)
+	func (@"couchbase".bÂ·2 *@"couchbase".Bucket) Write (@"couchbase".kÂ·3 string, @"couchbase".flagsÂ·4 int, @"couchbase".expÂ·5 int, @"couchbase".vÂ·6 interface {}, @"couchbase".optÂ·7 @"couchbase".WriteOptions) (@"couchbase".errÂ·1 error)
+	func (@"couchbase".bÂ·2 *@"couchbase".Bucket) WriteCas (@"couchbase".kÂ·3 string, @"couchbase".flagsÂ·4 int, @"couchbase".expÂ·5 int, @"couchbase".casÂ·6 uint64, @"couchbase".vÂ·7 interface {}, @"couchbase".optÂ·8 @"couchbase".WriteOptions) (@"couchbase".errÂ·1 error)
+	func (@"couchbase".bÂ·2 *@"couchbase".Bucket) WriteUpdate (@"couchbase".kÂ·3 string, @"couchbase".expÂ·4 int, @"couchbase".callbackÂ·5 @"couchbase".WriteUpdateFunc "esc:0x0") (? error)
+	func (@"couchbase".bÂ·2 @"couchbase".Bucket) @"couchbase".authHandler () (@"couchbase".ahÂ·1 @"couchbase".AuthHandler) { if @"couchbase".bÂ·2.@"couchbase".pool != nil { @"couchbase".ahÂ·1 = @"couchbase".bÂ·2.@"couchbase".pool.@"couchbase".client.@"couchbase".ah }; if @"couchbase".ahÂ·1 == nil { @"couchbase".ahÂ·1 = (&@"couchbase".basicAuth{ @"couchbase".u:@"couchbase".bÂ·2.Name, @"couchbase".p:"" }) }; return  }
+	func (@"couchbase".bÂ·2 *@"couchbase".Bucket) @"couchbase".casNext (@"couchbase".kÂ·3 string, @"couchbase".expÂ·4 int, @"couchbase".stateÂ·5 *@"gomemcached/client".CASState) (? bool)
+	func (@"couchbase".bÂ·3 *@"couchbase".Bucket) @"couchbase".ddocURL (@"couchbase".docnameÂ·4 string) (? string, ? error)
+	func (@"couchbase".bÂ·1 *@"couchbase".Bucket) @"couchbase".doBulkGet (@"couchbase".vbÂ·2 uint16, @"couchbase".keysÂ·3 []string, @"couchbase".chÂ·4 chan<- map[string]*@"gomemcached".MCResponse "esc:0x0", @"couchbase".echÂ·5 chan error "esc:0x0")
+	func (@"couchbase".bÂ·2 @"couchbase".Bucket) @"couchbase".getConnPool (@"couchbase".iÂ·3 int) (? *@"couchbase".connectionPool)
+	func (@"couchbase".bÂ·2 @"couchbase".Bucket) @"couchbase".getConnPools () (? []*@"couchbase".connectionPool)
+	func (@"couchbase".bÂ·2 @"couchbase".Bucket) @"couchbase".getMasterNode (@"couchbase".iÂ·3 int) (? string)
+	func (@"couchbase".bÂ·2 *@"couchbase".Bucket) @"couchbase".parseURLResponse (@"couchbase".pathÂ·3 string, @"couchbase".outÂ·4 interface {}) (? error)
+	func (@"couchbase".bÂ·1 *@"couchbase".Bucket) @"couchbase".processBulkGet (@"couchbase".kdmÂ·2 map[uint16][]string, @"couchbase".chÂ·3 chan map[string]*@"gomemcached".MCResponse, @"couchbase".echÂ·4 chan error)
+	func (@"couchbase".bÂ·3 *@"couchbase".Bucket) @"couchbase".randomBaseURL () (? *@"net/url".URL, ? error)
+	func (@"couchbase".bÂ·1 *@"couchbase".Bucket) @"couchbase".replaceConnPools (@"couchbase".withÂ·2 []*@"couchbase".connectionPool)
+	func (@"couchbase".bÂ·3 *@"couchbase".Bucket) @"couchbase".update (@"couchbase".kÂ·4 string, @"couchbase".expÂ·5 int, @"couchbase".callbackÂ·6 @"couchbase".UpdateFunc "esc:0x0") (@"couchbase".newCasÂ·1 uint64, @"couchbase".errÂ·2 error)
+	func @"".UpdateView (@"".dÂ·2 *@"couchbase".Bucket, @"".ddocNameÂ·3 string, @"".markerKeyÂ·4 string, @"".ddocBodyÂ·5 string "esc:0x0", @"".versionÂ·6 int) (? error)
+	func @"".init ()
+	var @"time".months [12]string
+	var @"time".days [7]string
+	var @"time".Local *@"time".Location
+	var @"time".UTC *@"time".Location
+	type @"sync".rlocker struct { @"sync".w @"sync".Mutex; @"sync".writerSem uint32; @"sync".readerSem uint32; @"sync".readerCount int32; @"sync".readerWait int32 }
+	func (@"sync".rÂ·1 *@"sync".rlocker) Lock ()
+	func (@"sync".rÂ·1 *@"sync".rlocker) Unlock ()
+	var @"gomemcached/client".ErrorInvalidLog error
+	type @"couchbase".basicAuth struct { @"couchbase".u string; @"couchbase".p string }
+	func (@"couchbase".bÂ·3 @"couchbase".basicAuth "esc:0x6") GetCredentials () (? string, ? string) { return @"couchbase".bÂ·3.@"couchbase".u, @"couchbase".bÂ·3.@"couchbase".p }
+
+$$
+ _go_.6          0           0     0     644     15584     `
+go object windows amd64 go1.4 X:precisestack
+
+!
+  go13ldencoding/json.a
+log.atime.acouchbase.a ş"".UpdateView  À  ¦eH‹%(   H‹‰    HD$¸H;Awè    ëŞHìÈ   HÇ„$      HÇ„$      H    H‰$è    H‹L$H‰Ï1Àè    H‰L$@H‹œ$Ğ   H‰$H‹œ$è   H‰\$H‹œ$ğ   H‰\$H    H‰D$`H‰D$H‰L$hH‰L$ è    H‹l$(H‹t$0H‰t$XHƒı H‰l$P„Ç   H\$pHÇ    HÇC    H\$pHƒû „   HÇÂ   HÇÁ   H‰œ$°   H‰”$¸   H‰Œ$À   H‰,$H‰t$è    H‹D$H‹L$H‹œ$°   H‰$H‰D$`H‰D$H‰L$hH‰L$è    H    H,$H‰ïH‰ŞH¥H¥H‹œ$°   H‰\$H‹œ$¸   H‰\$H‹œ$À   H‰\$ è    H‹l$@H‹] H‹¬$  H9ëÂ  H\$pHÇ    HÇC    H\$pHƒû „˜  HÇÂ   HÇÁ   H‰œ$°   H‰”$¸   H‰Œ$À   H    H‰$H‹\$@H‰\$è    H‹D$H‹L$H‹œ$°   H‰$H‰D$`H‰D$H‰L$hH‰L$è    H    H,$H‰ïH‰ŞH¥H¥H‹œ$°   H‰\$H‹œ$¸   H‰\$H‹œ$À   H‰\$ è    H    H‰$è    H‹\$H‰\$HH‹œ$ø   H‰$H‹œ$   H‰\$è    H\$Hl$H‰ïH‰ŞH¥H¥H¥H‹\$HH‰$è    H‹L$HH‹œ$Ğ   H‰$H‹œ$Ø   H‰\$H‹œ$à   H‰\$H    H‰D$`H‰D$H‰L$hH‰L$ è    H‹D$(H‹L$0H‰L$XHƒø H‰D$PtH‰„$  H‰Œ$  HÄÈ   ÃH‹\$@H‹¬$  H‰+è    H‹$‹L$H‹D$H‹    H‰”$˜   ‰Œ$    H‰„$¨   H‹\$@H‰$Hƒ$HÇD$    H‰”$€   H‰T$‰Œ$ˆ   ‰L$H‰„$   H‰D$ è    H‹D$@Hh H    H‰ïH‰ŞH¥H¥H‹œ$Ğ   H‰$H‹œ$è   H‰\$H‹œ$ğ   H‰\$HÇD$    H‰ÁH    H‰D$`H‰D$ H‰L$hH‰L$(è    H‹L$0H‹D$8H‰Œ$  H‰„$  HÄÈ   Ã‰éaıÿÿHÇ„$      HÇ„$      HÄÈ   Ã‰éYüÿÿ8      8  0runtime.morestack_noctxt   ˆ  $type."".ViewMarker   š  "runtime.newobject   ¸è  runtime.duffzero   œ  &type.*"".ViewMarker   Î  .couchbase.(*Bucket).Get   ¸  runtime.convI2E   –  2runtime.writebarrieriface   ¤  Vgo.string."Error checking view version: %v"   ˜  log.Printf   ì  type.int   ’  runtime.convT2E   ğ  2runtime.writebarrieriface   ş  xgo.string."Installing new version of views (old version=%v)"   ò	  log.Printf   €
+  :type.encoding/json.RawMessage   ’
+  "runtime.newobject   â
+  2runtime.stringtoslicebyte   ª  2runtime.writebarrierslice     <type.*encoding/json.RawMessage   À  6couchbase.(*Bucket).PutDDoc   Î  time.Now   ö  time.UTC   ¦  0runtime.writebarrierfat3   Æ  ,go.string."viewmarker"   Ì  &type.*"".ViewMarker   ş  .couchbase.(*Bucket).Set      *"".autotmp_0016  "type.interface {} "".autotmp_0015  *type.*[1]interface {} "".autotmp_0014  &type.[]interface {} "".autotmp_0013  "type.interface {} "".autotmp_0011 /&type.[]interface {} "".autotmp_0010  type.error "".autotmp_0009  &type.*"".ViewMarker "".autotmp_0007  type.error "".autotmp_0005  (type.[1]interface {} "".autotmp_0004 ¯(type.[1]interface {} "".&doc ÿ<type.*encoding/json.RawMessage "".&marker &type.*"".ViewMarker "".~r0 type.time.Time time.tÂ·2 _type.time.Time "".err ïtype.error "".~r5 €type.error "".version ptype.int "".ddocBody Ptype.string "".markerKey 0type.string "".ddocName type.string "".d  ,type.*couchbase.Bucket 4)¬&  	 N<AZÇÓ\Zvt  0 LZup}p(oŸb TgclocalsÂ·647202b6a4603d11a1ccba18f2133411 TgclocalsÂ·15cdc5c7a510f2ed5928bfadddf7454b   ŠD:/Golang Developments/CouchReplicator/src/couchbase/util/viewmgmt.goş"".init  À  ÀeH‹%(   H‹‰    H;awè    ëã¶    €û t¶    €ûuÃè    Æ    è    è    è    è    Æ    Ã      .  0runtime.morestack_noctxt   @  "".initdoneÂ·   X  "".initdoneÂ·   n  "runtime.throwinit   ~ "".initdoneÂ·   Š  couchbase.init   ”  time.init     log.init   ¨  $encoding/json.init   ´ "".initdoneÂ·        ` ` h` 
+ 6* TgclocalsÂ·3280bececceccd33cb74587feedb1f9f TgclocalsÂ·3280bececceccd33cb74587feedb1f9f   ŠD:/Golang Developments/CouchReplicator/src/couchbase/util/viewmgmt.goş0type..hash."".ViewMarker À  ¼eH‹%(   H‹‰    H;awè    ëãHƒì H‹\$(H‰$Hƒ<$ „   HÇD$   H‹\$8H‰\$è    H‹D$H‹\$(H‰$Hƒ<$ tgHƒ$HÇD$   H‰D$8H‰D$è    H‹D$H‹\$(H‰$Hƒ<$ t,Hƒ$ HÇD$   H‰D$8H‰D$è    H‹\$H‰\$@HƒÄ Ã‰%    ëË‰%    ë‰%    éWÿÿÿ
+      .  0runtime.morestack_noctxt   ’  runtime.memhash   ö  (type..hash.time.Time   Ú  runtime.strhash   @@  "".autotmp_0031  type.uintptr "".autotmp_0030  type.uintptr "".~r3 0type.uintptr "".h  type.uintptr "".s type.uintptr "".p  &type.*"".ViewMarker !@?@  à à  H˜ TgclocalsÂ·2dc77d960dd3e4b3de2361f9cbd75783 TgclocalsÂ·3280bececceccd33cb74587feedb1f9f   ŠD:/Golang Developments/CouchReplicator/src/couchbase/util/viewmgmt.goş,type..eq."".ViewMarker À  ¾eH‹%(   H‹‰    H;awè    ëãHƒìHH‹t$PH‹T$XH‹H‹*H9ët
+ÆD$h HƒÄHÃH‰ñHƒÁH‰ĞHƒÀH‹H‹(H9ëu|‹Y‹h9ëurH‹YH‹hH9ëueH‰óH‹v H‹K(H‰ÓH‹R H‹C(H9Áu@H‰t$8H‰4$H‰L$@H‰L$H‰T$(H‰T$H‰D$0H‰D$è    ¶\$ €û t
+ÆD$hHƒÄHÃÆD$h HƒÄHÃÆD$h HƒÄHÃ      .  0runtime.morestack_noctxt   æ   runtime.eqstring   @  "".autotmp_0035 ?type.string "".autotmp_0034 type.string "".~r3 0type.bool "".s  type.uintptr "".q &type.*"".ViewMarker "".p  &type.*"".ViewMarker 8!Š		 à à  ². TgclocalsÂ·9c703c5c7b9c1932c840b69f8ebce236 TgclocalsÂ·44568aa369055d8938d809aa5d80843b   ŠD:/Golang Developments/CouchReplicator/src/couchbase/util/viewmgmt.goş4type..hash.[1]interface {} à  ÜeH‹%(   H‹‰    H;awè    ëãHƒì0H‹L$H1ÀHÇD$    H‹l$ H9è}eH‰D$(H‰ÅH‰ÈHÁÀH»¿c»kïR H¯ØH‰ØH‹\$8Hƒû tDHkíHëH‰$HÇD$   H‰D$HH‰D$è    H‹L$H‹D$(HÿÀH‹l$ H9è|›H‰L$PHƒÄ0Ã‰ë¸      .  0runtime.morestack_noctxt   Š  (runtime.nilinterhash   @`  "".autotmp_0038 type.int "".autotmp_0037 type.int "".~r3 0type.uintptr "".h  type.uintptr "".s type.uintptr "".p  *type.*[1]interface {} !`ˆ_` ° °  „, TgclocalsÂ·2dc77d960dd3e4b3de2361f9cbd75783 TgclocalsÂ·3280bececceccd33cb74587feedb1f9f   ŠD:/Golang Developments/CouchReplicator/src/couchbase/util/viewmgmt.goş0type..eq.[1]interface {} à  ÖeH‹%(   H‹‰    H;awè    ëãHƒìX1ÀHÇD$(   H‹l$(H9è’   H‰D$0H‹\$hHƒû „–   H‰ÅHkíHëH‹H‹sH‹\$`Hƒû tvH‰ÅHkíHëH‹H‹SH9ÈuVH‰D$8H‰$H‰T$@H‰T$H‰L$HH‰L$H‰t$PH‰t$è    ¶\$ €û t H‹D$0HÿÀH‹l$(H9èŒnÿÿÿÆD$xHƒÄXÃÆD$x HƒÄXÃ‰ë†‰écÿÿÿ      .  0runtime.morestack_noctxt   Ğ  runtime.efaceeq   @°  "".autotmp_0042 ?"type.interface {} "".autotmp_0041 "type.interface {} "".autotmp_0040 _type.int "".autotmp_0039 Otype.int "".~r3 0type.bool "".s  type.uintptr "".q *type.*[1]interface {} "".p  *type.*[1]interface {} &!°´¯°	¯° ğ ğ  §I TgclocalsÂ·9c703c5c7b9c1932c840b69f8ebce236 TgclocalsÂ·44568aa369055d8938d809aa5d80843b   ŠD:/Golang Developments/CouchReplicator/src/couchbase/util/viewmgmt.goşVgo.string."Error checking view version: %v" `  `               Error checking view version: %v    Vgo.string."Error checking view version: %v"   şxgo.string."Installing new version of views (old version=%v)"   ‚        0       Installing new version of views (old version=%v)    xgo.string."Installing new version of views (old version=%v)"   ş,go.string."viewmarker" @  6        
+       viewmarker    ,go.string."viewmarker"   şTgclocalsÂ·15cdc5c7a510f2ed5928bfadddf7454b `  `   "                  ğ      ğ      
+        şTgclocalsÂ·647202b6a4603d11a1ccba18f2133411 8  8      ŠH  ŠH  ŠH  ŠH  ŠH   şTgclocalsÂ·3280bececceccd33cb74587feedb1f9f           şTgclocalsÂ·3280bececceccd33cb74587feedb1f9f           ş,"".initdoneÂ·  type.uint8   ş "".UpdateViewÂ·f              "".UpdateView   ş(runtime.newobjectÂ·f              "runtime.newobject   ş4couchbase.(*Bucket).GetÂ·f              .couchbase.(*Bucket).Get   ş$runtime.convI2EÂ·f              runtime.convI2E   ş8runtime.writebarrierifaceÂ·f              2runtime.writebarrieriface   şlog.PrintfÂ·f              log.Printf   ş$runtime.convT2EÂ·f              runtime.convT2E   ş8runtime.stringtoslicebyteÂ·f              2runtime.stringtoslicebyte   ş8runtime.writebarriersliceÂ·f              2runtime.writebarrierslice   ş<couchbase.(*Bucket).PutDDocÂ·f              6couchbase.(*Bucket).PutDDoc   ştime.NowÂ·f              time.Now   ş6runtime.writebarrierfat3Â·f              0runtime.writebarrierfat3   ş4couchbase.(*Bucket).SetÂ·f              .couchbase.(*Bucket).Set   ş,runtime.throwreturnÂ·f              &runtime.throwreturn   ş"".initÂ·f              "".init   ş(runtime.throwinitÂ·f              "runtime.throwinit   ş"couchbase.initÂ·f              couchbase.init   ştime.initÂ·f              time.init   şlog.initÂ·f              log.init   ş*encoding/json.initÂ·f              $encoding/json.init   şTgclocalsÂ·3280bececceccd33cb74587feedb1f9f           şTgclocalsÂ·2dc77d960dd3e4b3de2361f9cbd75783             şTgclocalsÂ·44568aa369055d8938d809aa5d80843b              şTgclocalsÂ·9c703c5c7b9c1932c840b69f8ebce236             ş8type..hashfunc."".ViewMarker              0type..hash."".ViewMarker   ş4type..eqfunc."".ViewMarker              ,type..eq."".ViewMarker   ş.type..alg."".ViewMarker                        8type..hashfunc."".ViewMarker     4type..eqfunc."".ViewMarker   şbruntime.gcbits.0x44844800000000000000000000000000     D„H              şHgo.string."couchbaseutil.ViewMarker" `  R               couchbaseutil.ViewMarker    Hgo.string."couchbaseutil.ViewMarker"   ş&go.string."Version" 0  0               Version    &go.string."Version"   ş8go.string."json:\"version\"" @  >               json:"version"    8go.string."json:\"version\""   ş*go.string."Timestamp" @  4        	       Timestamp    *go.string."Timestamp"   ş<go.string."json:\"timestamp\"" P  B               json:"timestamp"    <go.string."json:\"timestamp\""   ş go.string."Type" 0  *               Type     go.string."Type"   ş2go.string."json:\"type\"" @  8               json:"type"    2go.string."json:\"type\""   ş,go.string."ViewMarker" @  6        
+       ViewMarker    ,go.string."ViewMarker"   ş$type."".ViewMarker  €  €0       0øŞ;                                                                                                                                                                                                                                              &   .type..alg."".ViewMarker   0  bruntime.gcbits.0x44844800000000000000000000000000   P  Hgo.string."couchbaseutil.ViewMarker"   p  &type.*"".ViewMarker   €  "runtime.zerovalue   À $type."".ViewMarker   À  &go.string."Version"   à  type.int   ğ  8go.string."json:\"version\""     *go.string."Timestamp"   °  type.time.Time   À  <go.string."json:\"timestamp\""   à   go.string."Type"   €  type.string     2go.string."json:\"type\""   `° $type."".ViewMarker   °  ,go.string."ViewMarker"   À  "go.importpath."".   Ğ€ $type."".ViewMarker   şbruntime.gcbits.0x88000000000000000000000000000000     ˆ                şJgo.string."*couchbaseutil.ViewMarker" `  T               *couchbaseutil.ViewMarker    Jgo.string."*couchbaseutil.ViewMarker"   ş&type.*"".ViewMarker             &Àv 6                                                                    runtime.algarray   0  bruntime.gcbits.0x88000000000000000000000000000000   P  Jgo.string."*couchbaseutil.ViewMarker"   p  8go.weak.type.**"".ViewMarker   €  "runtime.zerovalue     $type."".ViewMarker   şbruntime.gcbits.0xcc000000000000000000000000000000     Ì                ş0go.string."interface {}" @  :               interface {}    0go.string."interface {}"   ş"type.interface {} À  À       çW                                                                                   €  runtime.algarray   0  bruntime.gcbits.0xcc000000000000000000000000000000   P  0go.string."interface {}"   p  4go.weak.type.*interface {}   €  "runtime.zerovalue   À "type.interface {}   şbruntime.gcbits.0x48844400000000000000000000000000     H„D              ş4go.string."[]interface {}" @  >               []interface {}    4go.string."[]interface {}"   ş&type.[]interface {}            p“ê/                                                                     runtime.algarray   0  bruntime.gcbits.0x48844400000000000000000000000000   P  4go.string."[]interface {}"   p  8go.weak.type.*[]interface {}   €  "runtime.zerovalue     "type.interface {}   şRgo.typelink.[]interface {}/[]interface {}              &type.[]interface {}   şTgclocalsÂ·3280bececceccd33cb74587feedb1f9f           şTgclocalsÂ·2dc77d960dd3e4b3de2361f9cbd75783             şTgclocalsÂ·44568aa369055d8938d809aa5d80843b              şTgclocalsÂ·9c703c5c7b9c1932c840b69f8ebce236             ş<type..hashfunc.[1]interface {}              4type..hash.[1]interface {}   ş8type..eqfunc.[1]interface {}              0type..eq.[1]interface {}   ş2type..alg.[1]interface {}                        <type..hashfunc.[1]interface {}     8type..eqfunc.[1]interface {}   ş6go.string."[1]interface {}" @  @               [1]interface {}    6go.string."[1]interface {}"   ş(type.[1]interface {} À  À       P‘[ú                                                                                   2type..alg.[1]interface {}   0  bruntime.gcbits.0xcc000000000000000000000000000000   P  6go.string."[1]interface {}"   p  :go.weak.type.*[1]interface {}   €  "runtime.zerovalue     "type.interface {}      &type.[]interface {}   şVgo.typelink.[1]interface {}/[1]interface {}              (type.[1]interface {}   ş8go.string."*[1]interface {}" P  B               *[1]interface {}    8go.string."*[1]interface {}"   ş*type.*[1]interface {}            ¿¨5 6                                                                    runtime.algarray   0  bruntime.gcbits.0x88000000000000000000000000000000   P  8go.string."*[1]interface {}"   p  <go.weak.type.**[1]interface {}   €  "runtime.zerovalue     (type.[1]interface {}   şgo.string."log" 0  (               log    go.string."log"   ş$go.importpath.log.                       go.string."log"   ş*go.string."couchbase" @  4        	       couchbase    *go.string."couchbase"   ş0go.importpath.couchbase.             	          *go.string."couchbase"   ş&go.string."runtime" 0  0               runtime    &go.string."runtime"   ş,go.importpath.runtime.                       &go.string."runtime"   ş go.string."time" 0  *               time     go.string."time"   ş&go.importpath.time.                        go.string."time"   ş2go.string."encoding/json" @  <               encoding/json    2go.string."encoding/json"   ş8go.importpath.encoding/json.                       2go.string."encoding/json"   ş6type..hash."".ViewMarkerÂ·f              0type..hash."".ViewMarker   ş$runtime.memhashÂ·f              runtime.memhash   ş.type..hash.time.TimeÂ·f              (type..hash.time.Time   ş$runtime.strhashÂ·f              runtime.strhash   ş2type..eq."".ViewMarkerÂ·f              ,type..eq."".ViewMarker   ş&runtime.eqstringÂ·f               runtime.eqstring   ş:type..hash.[1]interface {}Â·f              4type..hash.[1]interface {}   ş.runtime.nilinterhashÂ·f              (runtime.nilinterhash   ş6type..eq.[1]interface {}Â·f              0type..eq.[1]interface {}   ş$runtime.efaceeqÂ·f              runtime.efaceeq   ş"runtime.zerovalue      ÿÿgo13ld
