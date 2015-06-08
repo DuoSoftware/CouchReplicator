@@ -1,5 +1,6 @@
 package postgresrep
 
+import "net/http"
 import "fmt"
 import _ "pq"
 import "couchbase"
@@ -10,8 +11,10 @@ import "os"
 import "database/sql"
 import linq "go-linq"
 import "redis_1"
+import "io/ioutil"
+import "encoding/json"
 
-func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket, couchViewName, xmlPath, enableDelete string) {
+func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket, couchViewName, xmlPath, enableDelete, serviceUri string) {
 
 	file, _ := os.Create("loginsert.txt")
 	//getting table mappings
@@ -90,11 +93,23 @@ func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, co
 			fmt.Println("Getting value for key :" + res.Rows[i].ID)
 			file.WriteString("Getting value for key :" + res.Rows[i].ID + "\n")
 
-			err := bucket.Get(res.Rows[i].ID, &f)
-			if (err != nil) || (f == nil) || (reflect.ValueOf(f).Kind() != reflect.Map) {
+			result, err := http.Get(serviceUri + res.Rows[i].ID)
+			if err != nil {
 				fmt.Println("Object not found or mismacthed with structures for key :" + res.Rows[i].ID)
 			} else {
 
+				defer result.Body.Close()
+				body, _ := ioutil.ReadAll(result.Body)
+				str := string(body)
+
+				str = strings.Replace(str, "u000d", "", -1)
+				str = strings.Replace(str, "u000a", "", -1)
+				str, _ = strconv.Unquote(str)
+				str = strings.Replace(str, "\\", "", -1)
+				var m map[string]interface{}
+				if err := json.Unmarshal([]byte(str), &m); err != nil {
+					panic(err)
+				}
 				fmt.Println("Got value for key :" + res.Rows[i].ID + " and type is " + reflect.TypeOf(f).Kind().String())
 
 				for _, table := range tables.Tables {
@@ -280,7 +295,7 @@ func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, co
 	db.Close()
 }
 
-func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket, xmlPath, enableDelete, redisIp, redisPassword string, redisDb int64) (err error) {
+func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket, xmlPath, enableDelete, redisIp, redisPassword, serviceUri string, redisDb int64) (err error) {
 
 	fmt.Println("Connecting to the redis")
 	var redisClient *redis_1.Client
@@ -290,28 +305,6 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 	file, _ := os.Create("logupdate.txt")
 	//getting table mappings
 	var tables = GetXMLData(xmlPath, file)
-
-	fmt.Println("Connecting to the couch")
-	file.WriteString("Connecting to the couch" + "\n")
-	client, err := couchbase.Connect("http://" + couchHost + ":8091/")
-	if err != nil {
-		fmt.Println("couch connection error : " + err.Error() + "\n")
-		file.WriteString(err.Error() + "\n")
-	}
-
-	file.WriteString("Getting couch pool " + "\n")
-	pool, err := client.GetPool(couchPool)
-	if err != nil {
-		fmt.Println("couch connection error : " + err.Error() + "\n")
-		file.WriteString(err.Error() + "\n")
-	}
-
-	file.WriteString("Getting couch bucket " + "\n")
-	bucket, err := pool.GetBucket(couchBucket)
-	if err != nil {
-		fmt.Println("couch get bucket error : " + err.Error() + "\n")
-		file.WriteString(err.Error() + "\n")
-	}
 
 	totalCouchRows, _ := redisClient.LLen("StatusBucket").Result()
 	fmt.Println("Number of rows : " + strconv.FormatInt(totalCouchRows, 10))
@@ -329,7 +322,7 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 
 	listDataJson, listError := redisClient.LPop("StatusBucket").Result()
 	fmt.Println(listDataJson)
-	
+
 	fmt.Println("Connected to postgres database " + dbname + " with user " + user)
 	i := 0
 	for listError == nil {
@@ -339,9 +332,8 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 		updateType := listData.Type
 		objectType := listData.ObjectType
 
-		bucket.Get(updateId, &f)
 		tableSelected, _, _ := linq.From(tables.Tables).Where(
-			func(in linq.T) (bool, error) { return in.(Table).CouchName == objectType, nil }).First()			
+			func(in linq.T) (bool, error) { return in.(Table).CouchName == objectType, nil }).First()
 
 		if tableSelected != nil {
 			table := tableSelected.(Table)
@@ -352,12 +344,24 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 					fmt.Println("Getting value for key :" + updateId)
 					file.WriteString("Getting value for key :" + updateId + "\n")
 
-					err := bucket.Get(updateId, &f)
-					if (err != nil) || (f == nil) {
+					result, err := http.Get(serviceUri + updateId)
+
+					if err != nil {
 						fmt.Println("Object not found for key :" + updateId)
 					} else {
 
-						m := f.(map[string]interface{})
+						defer result.Body.Close()
+						body, _ := ioutil.ReadAll(result.Body)
+						str := string(body)
+
+						str = strings.Replace(str, "u000d", "", -1)
+						str = strings.Replace(str, "u000a", "", -1)
+						str, _ = strconv.Unquote(str)
+						str = strings.Replace(str, "\\", "", -1)
+						var m map[string]interface{}
+						if err := json.Unmarshal([]byte(str), &m); err != nil {
+							panic(err)
+						}
 
 						fmt.Println("Got value for key :" + updateId)
 
@@ -494,7 +498,7 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 							}
 						}
 
-						fmt.Println("processed " + strconv.Itoa(i) + " out of " + strconv.FormatInt(totalCouchRows,10))
+						fmt.Println("processed " + strconv.Itoa(i) + " out of " + strconv.FormatInt(totalCouchRows, 10))
 					}
 
 				} else {
@@ -651,7 +655,8 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 	fmt.Println("Log file closed")
 	db.Close()
 	fmt.Println("Postgres connection closed")
-	bucket.Close()
+	redisClient.Close()
+	fmt.Println("Postgres connection closed")
 	return
 }
 

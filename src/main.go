@@ -8,9 +8,13 @@ import "time"
 
 func main() {
 
-	var DB, User, Password, Host, CouchHost, CouchPool, CouchBucket, XMLPath, Option, EnableDelete, RedisIP, RedisPasswd, ElasticHost, IndexName, IndexType, CouchView string
+	var DB, User, Password, Host, CouchHost, CouchPool, CouchBucket, XMLPath, Option, EnableDelete, RedisIP, RedisPasswd, ElasticHost, IndexName, IndexType, CouchView, ServiceURI string
 	var WaitTime, NumberOfRecords int
 	var RedisDB int64
+
+	fmt.Print("Service URI(http://192.168.1.194/DuoSubscribe5/V5Services/Transformation/TransformationService.svc/Json/Retreve?Key=) : ")
+	fmt.Scanf("%s\n", &ServiceURI)
+	fmt.Println()
 
 	fmt.Print("Postgres database name(ReportDB) : ")
 	fmt.Scanf("%s\n", &DB)
@@ -80,9 +84,9 @@ func main() {
 	fmt.Scanf("%s\n", &Option)
 
 	if Option == "1" {
-		postgresrep.InitialMigrationC2PG(DB, User, Password, Host, CouchHost, CouchPool, CouchBucket, CouchView, XMLPath, EnableDelete)
+		postgresrep.InitialMigrationC2PG(DB, User, Password, Host, CouchHost, CouchPool, CouchBucket, CouchView, XMLPath, EnableDelete, ServiceURI)
 	} else if Option == "2" {
-		err := postgresrep.UpdateC2PG(DB, User, Password, Host, CouchHost, CouchPool, CouchBucket, XMLPath, EnableDelete, RedisIP, RedisPasswd, RedisDB)
+		err := postgresrep.UpdateC2PG(DB, User, Password, Host, CouchHost, CouchPool, CouchBucket, XMLPath, EnableDelete, RedisIP, RedisPasswd, ServiceURI, RedisDB)
 		if err != nil {
 			fmt.Println(err.Error())
 		}
@@ -99,7 +103,7 @@ func main() {
 			if err != nil {
 				fmt.Println("Cannot aquire lock from redis")
 			}
-			continuousUpdate(DB, User, Password, Host, CouchHost, CouchPool, CouchBucket, XMLPath, EnableDelete, RedisIP, RedisPasswd, RedisDB)
+			continuousUpdate(DB, User, Password, Host, CouchHost, CouchPool, CouchBucket, XMLPath, EnableDelete, RedisIP, RedisPasswd, ServiceURI, RedisDB)
 		} else {
 
 			checkStatus := true
@@ -115,7 +119,7 @@ func main() {
 					checkStatus = false
 					redisClient.Set("DTClusterStatus","1")
 					redisClient.Close()
-					continuousUpdate(DB, User, Password, Host, CouchHost, CouchPool, CouchBucket, XMLPath, EnableDelete, RedisIP, RedisPasswd, RedisDB)
+					continuousUpdate(DB, User, Password, Host, CouchHost, CouchPool, CouchBucket, XMLPath, EnableDelete, RedisIP, RedisPasswd, ServiceURI, RedisDB)
 				}
 			}
 		}
@@ -139,11 +143,11 @@ func main() {
 	}
 }
 
-func continuousUpdate(dbname, user, password, host, couchHost, couchPool, couchBucket, xmlPath, enableDelete, redisIp, redisPassword string, redisDb int64) {
+func continuousUpdate(dbname, user, password, host, couchHost, couchPool, couchBucket, xmlPath, enableDelete, redisIp, redisPassword, ServiceURI string, redisDb int64) {
 	continueUpdate := true
 
 	for continueUpdate == true {
-		err := postgresrep.UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket, xmlPath, enableDelete, redisIp, redisPassword , redisDb)
+		err := postgresrep.UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket, xmlPath, enableDelete, redisIp, redisPassword, ServiceURI, redisDb)
 		if err != nil {
 			fmt.Println(err.Error())
 			continueUpdate = false
