@@ -56,7 +56,7 @@ func main() {
 	fmt.Scanf("%d\n", &RedisDB)
 	fmt.Println()
 
-	fmt.Print("Redis IP(tcp:10.10.10.12:6379) : ")
+	fmt.Print("Redis IP(tcp:10.10.10.12) : ")
 	fmt.Scanf("%s\n", &RedisIP)
 	fmt.Println()
 
@@ -103,7 +103,7 @@ func main() {
 			if err != nil {
 				fmt.Println("Cannot aquire lock from redis")
 			}
-			continuousUpdate(DB, User, Password, Host, CouchHost, CouchPool, CouchBucket, XMLPath, EnableDelete, RedisIP, RedisPasswd, ServiceURI, RedisDB)
+			continuousUpdate(DB, User, Password, Host, CouchHost, CouchPool, CouchBucket, XMLPath, EnableDelete, RedisIP, RedisPasswd, ServiceURI, RedisDB, WaitTime)
 		} else {
 
 			checkStatus := true
@@ -119,7 +119,7 @@ func main() {
 					checkStatus = false
 					redisClient.Set("DTClusterStatus","1")
 					redisClient.Close()
-					continuousUpdate(DB, User, Password, Host, CouchHost, CouchPool, CouchBucket, XMLPath, EnableDelete, RedisIP, RedisPasswd, ServiceURI, RedisDB)
+					continuousUpdate(DB, User, Password, Host, CouchHost, CouchPool, CouchBucket, XMLPath, EnableDelete, RedisIP, RedisPasswd, ServiceURI, RedisDB, WaitTime)
 				}
 			}
 		}
@@ -143,7 +143,7 @@ func main() {
 	}
 }
 
-func continuousUpdate(dbname, user, password, host, couchHost, couchPool, couchBucket, xmlPath, enableDelete, redisIp, redisPassword, ServiceURI string, redisDb int64) {
+func continuousUpdate(dbname, user, password, host, couchHost, couchPool, couchBucket, xmlPath, enableDelete, redisIp, redisPassword, ServiceURI string, redisDb int64, waitTime int) {
 	continueUpdate := true
 
 	for continueUpdate == true {
@@ -152,5 +152,6 @@ func continuousUpdate(dbname, user, password, host, couchHost, couchPool, couchB
 			fmt.Println(err.Error())
 			continueUpdate = false
 		}
+		time.Sleep(time.Duration(waitTime) * time.Second)
 	}
 }
