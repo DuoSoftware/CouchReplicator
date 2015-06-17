@@ -517,6 +517,7 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 
 			} else {
 
+				fmt.Println("Getting value for key :" + updateId)
 				result, err := http.Get(serviceUri + updateId)
 
 				if err != nil {
