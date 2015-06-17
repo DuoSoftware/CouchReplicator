@@ -351,19 +351,31 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 				result, err := http.Get(serviceUri + updateId)
 
 				if err != nil {
-					fmt.Println("Object not found for key :" + updateId)
+					fmt.Println("Object not found for key :" + updateId + " ------ " +err.Error())
 				} else {
 
-					defer result.Body.Close()
-					body, _ := ioutil.ReadAll(result.Body)
+					bodyCloseErr := result.Body.Close()
+					if(bodyCloseErr != nil){
+						println("Body close error" + bodyCloseErr.Error())
+					}
+										
+					body, bodyErr := ioutil.ReadAll(result.Body)
+					if(bodyErr != nil){
+						println("Body error" + bodyErr.Error())
+					}
+					
 					str := string(body)
 
-					str = strings.Replace(str, "u000d", "", -1)
-					str = strings.Replace(str, "u000a", "", -1)
+					//str = strings.Replace(str, "u000d", "", -1)
+					//str = strings.Replace(str, "u000a", "", -1)
 					str, _ = strconv.Unquote(str)
+					
 					str = strings.Replace(str, "\\", "", -1)
+					fmt.Println("Marshalled string ~ "+str)
 
 					if err := json.Unmarshal([]byte(str), &m); err != nil {
+						println("json string ~" + str)
+						println("Error" + err.Error())
 						panic(err)
 					}
 
@@ -450,16 +462,16 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 
 								nestedTrue = false
 								fmt.Println(nestedTrue)
-								
+
 								for k, v := range m {
 
-										if v != nil {
-											insertQuery = strings.Replace(insertQuery, "@"+k, GetStringValue(v), -1)
-										} else {
-											insertQuery = strings.Replace(insertQuery, "@"+k, "", -1)
-										}
+									if v != nil {
+										insertQuery = strings.Replace(insertQuery, "@"+k, GetStringValue(v), -1)
+									} else {
+										insertQuery = strings.Replace(insertQuery, "@"+k, "", -1)
 									}
-								
+								}
+
 								//------------------------------------------------
 								fmt.Println(insertQuery)
 								result, err := db.Exec(insertQuery)
@@ -528,12 +540,14 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 					body, _ := ioutil.ReadAll(result.Body)
 					str := string(body)
 
-					str = strings.Replace(str, "u000d", "", -1)
-					str = strings.Replace(str, "u000a", "", -1)
+					//str = strings.Replace(str, "u000d", "", -1)
+					//str = strings.Replace(str, "u000a", "", -1)
 					str, _ = strconv.Unquote(str)
 					str = strings.Replace(str, "\\", "", -1)
 
 					if err := json.Unmarshal([]byte(str), &m); err != nil {
+						println("json string ~" + str)
+						println("Error" + err.Error())
 						panic(err)
 					}
 
