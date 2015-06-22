@@ -353,13 +353,7 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 				if err != nil {
 					fmt.Println("Object not found for key :" + updateId + " ------ " + err.Error())
 				} else {
-
-					bodyCloseErr := result.Body.Close()
-					if bodyCloseErr != nil {
-						println("Body close error" + bodyCloseErr.Error())
-						goto SilentSkip
-					}
-
+					
 					body, bodyErr := ioutil.ReadAll(result.Body)
 					if bodyErr != nil {
 						println("Body error" + bodyErr.Error())
@@ -367,6 +361,12 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 					}
 
 					str := string(body)
+					
+					bodyCloseErr := result.Body.Close()
+					if bodyCloseErr != nil {
+						println("Body close error" + bodyCloseErr.Error())
+						goto SilentSkip
+					}					
 
 					//str = strings.Replace(str, "u000d", "", -1)
 					//str = strings.Replace(str, "u000a", "", -1)
@@ -542,9 +542,19 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 					fmt.Println("Object not found for key :" + updateId)
 				} else {
 
-					defer result.Body.Close()
-					body, _ := ioutil.ReadAll(result.Body)
+					body, bodyErr := ioutil.ReadAll(result.Body)
+					if bodyErr != nil {
+						println("Body error" + bodyErr.Error())
+						goto SilentSkip
+					}
+
 					str := string(body)
+					
+					bodyCloseErr := result.Body.Close()
+					if bodyCloseErr != nil {
+						println("Body close error" + bodyCloseErr.Error())
+						goto SilentSkip
+					}		
 
 					//str = strings.Replace(str, "u000d", "", -1)
 					//str = strings.Replace(str, "u000a", "", -1)
