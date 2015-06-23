@@ -368,14 +368,18 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 						goto SilentSkip
 					}					
 
-					//str = strings.Replace(str, "u000d", "", -1)
-					//str = strings.Replace(str, "u000a", "", -1)
-					str, _ = strconv.Unquote(str)
+					str = strings.Replace(str,"\\/","-", -1)
+					println("Before unquote "+str)
+					println()					
+					strUq, quoteErr := strconv.Unquote(str)
+					if(quoteErr != nil){
+						println(quoteErr.Error())
+					}
+					println("Unquoted "+strUq)
+					//str = strings.Replace(str, "\\", "", -1)
+					//fmt.Println("Marshalled string ~ " + str)
 
-					str = strings.Replace(str, "\\", "", -1)
-					fmt.Println("Marshalled string ~ " + str)
-
-					if err := json.Unmarshal([]byte(str), &m); err != nil {
+					if err := json.Unmarshal([]byte(strUq), &m); err != nil {
 						println("json string ~" + str)
 						println("Error" + err.Error())
 						//panic(err)
@@ -556,12 +560,18 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 						goto SilentSkip
 					}		
 
-					//str = strings.Replace(str, "u000d", "", -1)
-					//str = strings.Replace(str, "u000a", "", -1)
-					str, _ = strconv.Unquote(str)
-					str = strings.Replace(str, "\\", "", -1)
-
-					if err := json.Unmarshal([]byte(str), &m); err != nil {
+					str = strings.Replace(str,"\\/","-", -1)
+					println("Before unquote "+str)					
+					println()
+					strQuoted, quoteErr := strconv.Unquote(str)
+					if(quoteErr != nil){
+						println(quoteErr.Error())
+					}
+					
+					println("Unquoted "+strQuoted)
+					//str = strings.Replace(str, "\\", "", -1)
+					fmt.Println("Marshalled string ~ " + strQuoted)
+					if err := json.Unmarshal([]byte(strQuoted), &m); err != nil {
 						println("json string ~" + str)
 						println("Error" + err.Error())
 						//panic(err)
