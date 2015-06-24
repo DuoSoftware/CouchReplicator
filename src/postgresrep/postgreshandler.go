@@ -383,7 +383,7 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 						println("json string ~" + str)
 						println("Error" + err.Error())
 						//panic(err)
-						redisClient.RPush(updateId, listDataJson)
+						redisClient.RPush("StatusBucket", listDataJson)
 						goto SilentSkip
 					}
 
@@ -488,7 +488,7 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 								if err != nil {
 									fmt.Println("Postgres insertion error : " + err.Error())
 									file.WriteString(err.Error() + "\n")
-									redisClient.RPush(updateId, listDataJson)
+									redisClient.RPush("StatusBucket", listDataJson)
 								} else {
 									status, ok := result.RowsAffected()
 									if ok == nil {
@@ -497,7 +497,7 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 									} else {
 										fmt.Println("Migrate status of key " + updateId + " is " + ok.Error())
 										file.WriteString("Migrate status of key " + updateId + " is " + ok.Error())
-										redisClient.RPush(updateId, listDataJson)
+										redisClient.RPush("StatusBucket", listDataJson)
 									}
 								}
 
@@ -520,7 +520,7 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 						if err != nil {
 							fmt.Println("Postgres insertion error : " + err.Error())
 							file.WriteString(err.Error() + "\n")
-							redisClient.RPush(updateId, listDataJson)
+							redisClient.RPush("StatusBucket", listDataJson)
 						} else {
 							status, ok := result.RowsAffected()
 							if ok == nil {
@@ -529,7 +529,7 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 							} else {
 								fmt.Println("Migrate status of key " + updateId + " is " + ok.Error())
 								file.WriteString("Migrate status of key " + updateId + " is " + ok.Error())
-								redisClient.RPush(updateId, listDataJson)
+								redisClient.RPush("StatusBucket", listDataJson)
 							}
 						}
 					}
@@ -575,7 +575,7 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 						println("json string ~" + str)
 						println("Error" + err.Error())
 						//panic(err)
-						redisClient.RPush(updateId, listDataJson)
+						redisClient.RPush("StatusBucket", listDataJson)
 						goto SilentSkip
 					}
 
@@ -669,7 +669,7 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 								if err != nil {
 									fmt.Println("Postgres insertion error : " + err.Error())
 									file.WriteString(err.Error() + "\n")
-									redisClient.RPush(updateId, listDataJson)
+									redisClient.RPush("StatusBucket", listDataJson)
 								} else {
 									status, ok := result.RowsAffected()
 									if ok == nil {
@@ -678,7 +678,7 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 									} else {
 										fmt.Println("Migrate status of key " + updateId + " is " + ok.Error())
 										file.WriteString("Migrate status of key " + updateId + " is " + ok.Error())
-										redisClient.RPush(updateId, listDataJson)
+										redisClient.RPush("StatusBucket", listDataJson)
 									}
 								}
 
@@ -702,7 +702,7 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 						if err != nil {
 							fmt.Println("Postgres update error : " + err.Error())
 							file.WriteString(err.Error() + "\n")
-							redisClient.RPush(updateId, listDataJson)
+							redisClient.RPush("StatusBucket", listDataJson)
 						} else {
 							status, ok := result.RowsAffected()
 							if ok == nil {
@@ -711,7 +711,7 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 							} else {
 								fmt.Println("Migrate status of key " + updateId + " is " + ok.Error())
 								file.WriteString("Migrate status of key " + updateId + " is " + ok.Error())
-								redisClient.RPush(updateId, listDataJson)
+								redisClient.RPush("StatusBucket", listDataJson)
 							}
 						}
 					}
