@@ -19,6 +19,7 @@ func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, co
 	file, _ := os.Create("loginsert.txt")
 	//getting table mappings
 	var tables = GetXMLData(xmlPath, file)
+	var m map[string]interface{}
 
 	fmt.Println("Connecting to the couch")
 	file.WriteString("Connecting to the couch" + "\n")
@@ -96,18 +97,33 @@ func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, co
 				fmt.Println("Object not found or mismacthed with structures for key :" + res.Rows[i].ID)
 			} else {
 
-				defer result.Body.Close()
-				body, _ := ioutil.ReadAll(result.Body)
+				body, bodyErr := ioutil.ReadAll(result.Body)
+				if bodyErr != nil {
+					println("Body error" + bodyErr.Error())
+					goto SilentSkip
+				}
+
 				str := string(body)
 
-				str = strings.Replace(str, "u000d", "", -1)
-				str = strings.Replace(str, "u000a", "", -1)
-				str, _ = strconv.Unquote(str)
-				str = strings.Replace(str, "\\", "", -1)
-				var m map[string]interface{}
-				if err := json.Unmarshal([]byte(str), &m); err != nil {
-					panic(err)
+				bodyCloseErr := result.Body.Close()
+				if bodyCloseErr != nil {
+					println("Body close error" + bodyCloseErr.Error())
+					goto SilentSkip
 				}
+
+				str = strings.Replace(str, "\\/", "-", -1)
+				strUq, quoteErr := strconv.Unquote(str)
+				if quoteErr != nil {
+					println(quoteErr.Error())
+					goto SilentSkip
+				}
+
+				if err := json.Unmarshal([]byte(strUq), &m); err != nil {
+					println("json string ~" + str)
+					println("Error" + err.Error())
+					goto SilentSkip
+				}
+
 				fmt.Println("Got value for key :" + res.Rows[i].ID + " ------------ " + str)
 
 				for _, table := range tables.Tables {
@@ -353,7 +369,7 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 				if err != nil {
 					fmt.Println("Object not found for key :" + updateId + " ------ " + err.Error())
 				} else {
-					
+
 					body, bodyErr := ioutil.ReadAll(result.Body)
 					if bodyErr != nil {
 						println("Body error" + bodyErr.Error())
@@ -361,23 +377,18 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 					}
 
 					str := string(body)
-					
+
 					bodyCloseErr := result.Body.Close()
 					if bodyCloseErr != nil {
 						println("Body close error" + bodyCloseErr.Error())
 						goto SilentSkip
-					}					
+					}
 
-					str = strings.Replace(str,"\\/","-", -1)
-					println("Before unquote "+str)
-					println()					
+					str = strings.Replace(str, "\\/", "-", -1)
 					strUq, quoteErr := strconv.Unquote(str)
-					if(quoteErr != nil){
+					if quoteErr != nil {
 						println(quoteErr.Error())
 					}
-					println("Unquoted "+strUq)
-					//str = strings.Replace(str, "\\", "", -1)
-					//fmt.Println("Marshalled string ~ " + str)
 
 					if err := json.Unmarshal([]byte(strUq), &m); err != nil {
 						println("json string ~" + str)
@@ -553,22 +564,22 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 					}
 
 					str := string(body)
-					
+
 					bodyCloseErr := result.Body.Close()
 					if bodyCloseErr != nil {
 						println("Body close error" + bodyCloseErr.Error())
 						goto SilentSkip
-					}		
+					}
 
-					str = strings.Replace(str,"\\/","-", -1)
-					println("Before unquote "+str)					
+					str = strings.Replace(str, "\\/", "-", -1)
+					println("Before unquote " + str)
 					println()
 					strQuoted, quoteErr := strconv.Unquote(str)
-					if(quoteErr != nil){
+					if quoteErr != nil {
 						println(quoteErr.Error())
 					}
-					
-					println("Unquoted "+strQuoted)
+
+					println("Unquoted " + strQuoted)
 					//str = strings.Replace(str, "\\", "", -1)
 					fmt.Println("Marshalled string ~ " + strQuoted)
 					if err := json.Unmarshal([]byte(strQuoted), &m); err != nil {
