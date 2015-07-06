@@ -23,6 +23,13 @@ import "encoding/json"
 			PGChange []PGChange `xml:PGChange`
 		}
 	
+	type InnerProcess struct{
+			XMLName xml.Name `xml:InnerProcess`
+			PGTableName string `xml:PGTableName`
+			IsCollection int `xml:IsCollection`
+			PropertyName string `xml:PropertyName`
+		}
+	
 	type NestedColumn struct{
 			XMLName xml.Name `xml:NestedColumn`
 			ColumnName string `xml:ColumnName`
@@ -32,7 +39,7 @@ import "encoding/json"
 	type NestedColumns struct{
 		XMLName xml.Name `xml:NestedColumns`
 		NestedColumn []NestedColumn `xml:NestedColumn`
-	}
+	}	
 	
 	type Table struct{
 			XMLName	xml.Name `xml:"Table"`
@@ -42,6 +49,7 @@ import "encoding/json"
 			PGUpdate	string	`xml:"PGUpdate"`
 			PGDelete	string	`xml:"PGDelete"`
 			PGChange []PGChange `xml:PGChange`
+			InnerProcess []InnerProcess `xml:InnerProcess`
 			NestedColumn []NestedColumn	`xml:NestedColumn`
 		}
 	

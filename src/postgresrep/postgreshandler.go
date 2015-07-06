@@ -111,6 +111,7 @@ func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, co
 					goto SilentSkip
 				}
 
+				println(str)
 				str = strings.Replace(str, "\\/", "-", -1)
 				strUq, quoteErr := strconv.Unquote(str)
 				if quoteErr != nil {
@@ -138,11 +139,13 @@ func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, co
 							var accountInt int64
 							if m[prop.ColumnName] != nil {
 								if reflect.TypeOf(propValue).Kind() == reflect.Float64 {
-									accountInt = int64(m[prop.ColumnName].(float64))
+									accountInt = reflect.Indirect(reflect.ValueOf(propValue)).Convert(reflect.TypeOf(int64(0))).Int()		
 									stringVal := strconv.FormatInt(accountInt, 10)
 									insertQuery = strings.Replace(insertQuery, "@"+prop.ColumnName+"_", stringVal, 100)
+									
+									fmt.Println(prop.ColumnName + " - " + reflect.TypeOf(propValue).Kind().String() + " - "+ stringVal)
 								}
-							}
+							}														
 						}
 
 						var strArray = []string{}
@@ -182,10 +185,11 @@ func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, co
 												if nested.Fixed == 1 {
 													if nestedValue != nil {
 														if reflect.TypeOf(nestedValue).Kind() == reflect.Float64 {
-															accountInt := int64(nestedValue.(float64))
+															accountInt := reflect.Indirect(reflect.ValueOf(nestedValue)).Convert(reflect.TypeOf(int64(0))).Int()
 															stringVal := strconv.FormatInt(accountInt, 10)
-															//file.WriteString(nested.ColumnName+" has fixed")
 															insertQuery = strings.Replace(insertQuery, "@"+nested.ColumnName, stringVal, -1)
+															
+															fmt.Println(nested.ColumnName + " - " + reflect.TypeOf(nestedValue).Kind().String() + " - "+ stringVal)
 														}
 													} else {
 														file.WriteString(nested.ColumnName + " value is null")
@@ -215,9 +219,11 @@ func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, co
 												if nestedValue != nil {
 													nestedValue = m[strArray[0]].([]interface{})[index]
 													if reflect.TypeOf(nestedValue).Kind() == reflect.Float64 {
-														accountInt := int64(nestedValue.(float64))
+														accountInt := reflect.Indirect(reflect.ValueOf(nestedValue)).Convert(reflect.TypeOf(int64(0))).Int()	
 														stringVal := strconv.FormatInt(accountInt, 10)
 														insertQuery = strings.Replace(insertQuery, "@"+nested.ColumnName, stringVal, -1)
+														
+														fmt.Println(nested.ColumnName + " - " + reflect.TypeOf(nestedValue).Kind().String() + " - "+ stringVal)
 													} else {
 														insertQuery = strings.Replace(insertQuery, "@"+nested.ColumnName, GetStringValue(nestedValue), -1)
 													}
@@ -411,6 +417,8 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 								accountInt = int64(m[prop.ColumnName].(float64))
 								stringVal := strconv.FormatInt(accountInt, 10)
 								insertQuery = strings.Replace(insertQuery, "@"+prop.ColumnName+"_", stringVal, 100)
+								
+								fmt.Println(prop.ColumnName + " - " + reflect.TypeOf(propValue).Kind().String() + " - "+ stringVal)
 							}
 						} else {
 							insertQuery = strings.Replace(insertQuery, "@"+prop.ColumnName+"_", "", 100)
@@ -449,6 +457,8 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 													accountInt := int64(nestedValue.(float64))
 													stringVal := strconv.FormatInt(accountInt, 10)
 													insertQuery = strings.Replace(insertQuery, "@"+nested.ColumnName, stringVal, -1)
+													
+													fmt.Println(nested.ColumnName + " - " + reflect.TypeOf(nestedValue).Kind().String() + " - "+ stringVal)
 												}
 											} else {
 												insertQuery = strings.Replace(insertQuery, "@"+nested.ColumnName, GetStringValue(nestedValue), -1)
@@ -466,6 +476,8 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 												accountInt := int64(nestedValue.(float64))
 												stringVal := strconv.FormatInt(accountInt, 10)
 												insertQuery = strings.Replace(insertQuery, "@"+nested.ColumnName, stringVal, -1)
+												
+												fmt.Println(nested.ColumnName + " - " + reflect.TypeOf(nestedValue).Kind().String() + " - "+ stringVal)
 											} else {
 												insertQuery = strings.Replace(insertQuery, "@"+nested.ColumnName, GetStringValue(nestedValue), -1)
 											}
@@ -603,6 +615,8 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 								accountInt = int64(m[prop.ColumnName].(float64))
 								stringVal := strconv.FormatInt(accountInt, 10)
 								updateQuery = strings.Replace(updateQuery, "@"+prop.ColumnName+"_", stringVal, 100)
+								
+								fmt.Println(prop.ColumnName + " - " + reflect.TypeOf(propValue).Kind().String() + " - "+ stringVal)
 							}
 						} else {
 							updateQuery = strings.Replace(updateQuery, "@"+prop.ColumnName+"_", "", 100)
@@ -640,6 +654,8 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 													accountInt := int64(nestedValue.(float64))
 													stringVal := strconv.FormatInt(accountInt, 10)
 													updateQuery = strings.Replace(updateQuery, "@"+nested.ColumnName, stringVal, -1)
+													
+													fmt.Println(nested.ColumnName + " - " + reflect.TypeOf(nestedValue).Kind().String() + " - "+ stringVal)
 												}
 											} else {
 												updateQuery = strings.Replace(updateQuery, "@"+nested.ColumnName, GetStringValue(nestedValue), -1)
@@ -657,6 +673,8 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 												accountInt := int64(nestedValue.(float64))
 												stringVal := strconv.FormatInt(accountInt, 10)
 												updateQuery = strings.Replace(updateQuery, "@"+nested.ColumnName, stringVal, -1)
+												
+												fmt.Println(nested.ColumnName + " - " + reflect.TypeOf(nestedValue).Kind().String() + " - "+ stringVal)
 											} else {
 												updateQuery = strings.Replace(updateQuery, "@"+nested.ColumnName, GetStringValue(nestedValue), -1)
 											}
