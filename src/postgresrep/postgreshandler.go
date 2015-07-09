@@ -127,7 +127,6 @@ func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, co
 				}
 
 				js, _ := simplejson.NewJson([]byte(strUq))
-
 				fmt.Println("Got value for key :" + res.Rows[i].ID + " ------------ " + str)
 				var table Table
 				var primaryTable Table
@@ -140,6 +139,8 @@ func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, co
 						break
 					}
 				}
+
+				innerTables := primaryTable.InnerProcess
 
 			ContinueInnerTables:
 
@@ -319,17 +320,19 @@ func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, co
 					}
 
 					fmt.Println("processed " + strconv.Itoa(i) + " out of " + strconv.Itoa(res.TotalRows))
+					if innerTables != nil {
+						if len(innerTables) > 0 {
 
-					for _, innertable := range primaryTable.InnerProcess {
+							innertableSelected, _, _ := linq.From(innerTables).First()
+							innerTables = pop(innerTables)
+							innerTable := innertableSelected.(InnerProcess)
 
-						tableToProcess, _, _ := linq.From(tables.Tables).Where(
-							func(in linq.T) (bool, error) { return in.(Table).PGName == innertable.PGTableName, nil }).First()
+							tableToProcess, _, _ := linq.From(tables.Tables).Where(
+								func(in linq.T) (bool, error) { return in.(Table).PGName == innerTable.PGTableName, nil }).First()
 
-						if tableToProcess != nil {
 							table = tableToProcess.(Table)
+
 							goto ContinueInnerTables
-						}else{
-							println("Unable to find inner table "+innertable.PGTableName)
 						}
 					}
 
@@ -884,4 +887,9 @@ func BulkDeleteFromCouch(couchHost, couchPool, couchBucket, couchViewName string
 
 	file.Close()
 	bucket.Close()
+}
+
+func pop(inList []InnerProcess)(popped []InnerProcess){
+	inList = append(inList[:0], inList[1:]...)
+	return inList
 }
