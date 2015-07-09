@@ -11,8 +11,6 @@
     </PGChange>
     <InnerProcess>
     	<PGTableName>tmp_profile</PGTableName>
-    	<IsCollection>1</IsCollection>
-    	<PropertyName>dealers.subdealers</PropertyName>
     </InnerProcess>
   </Table>
   <Table>

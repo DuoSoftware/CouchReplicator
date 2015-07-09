@@ -26,8 +26,6 @@ import "encoding/json"
 	type InnerProcess struct{
 			XMLName xml.Name `xml:InnerProcess`
 			PGTableName string `xml:PGTableName`
-			IsCollection int `xml:IsCollection`
-			PropertyName string `xml:PropertyName`
 		}
 	
 	type NestedColumn struct{
