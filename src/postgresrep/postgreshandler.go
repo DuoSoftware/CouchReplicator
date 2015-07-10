@@ -320,6 +320,7 @@ func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, co
 					}
 
 					fmt.Println("processed " + strconv.Itoa(i) + " out of " + strconv.Itoa(res.TotalRows))
+					
 					if innerTables != nil {
 						if len(innerTables) > 0 {
 
@@ -331,7 +332,8 @@ func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, co
 								func(in linq.T) (bool, error) { return in.(Table).PGName == innerTable.PGTableName, nil }).First()
 
 							table = tableToProcess.(Table)
-
+							fmt.Println("Inner table "+ table.CouchName)
+							
 							goto ContinueInnerTables
 						}
 					}
