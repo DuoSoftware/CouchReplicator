@@ -320,7 +320,7 @@ func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, co
 					}
 
 					fmt.Println("processed " + strconv.Itoa(i) + " out of " + strconv.Itoa(res.TotalRows))
-					
+
 					if innerTables != nil {
 						if len(innerTables) > 0 {
 
@@ -332,8 +332,8 @@ func InitialMigrationC2PG(dbname, user, password, host, couchHost, couchPool, co
 								func(in linq.T) (bool, error) { return in.(Table).PGName == innerTable.PGTableName, nil }).First()
 
 							table = tableToProcess.(Table)
-							fmt.Println("Inner table "+ table.CouchName)
-							
+							fmt.Println("Inner table " + table.CouchName)
+
 							goto ContinueInnerTables
 						}
 					}
@@ -398,7 +398,8 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 
 		if tableSelected != nil {
 			table := tableSelected.(Table)
-
+			primaryTable := table
+			innerTables := primaryTable.InnerProcess
 			if updateType == "Insert" {
 
 				fmt.Println("Getting value for key :" + updateId)
@@ -440,6 +441,8 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 
 					fmt.Println("Got value for key :" + updateId)
 					js, _ := simplejson.NewJson([]byte(strUq))
+
+				ContinueInnerTablesInsert:
 
 					var insertQuery = table.PGInsert
 					//file.WriteString("Iterating change columns " + "\n")
@@ -595,6 +598,23 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 					}
 
 					fmt.Println("processed " + strconv.Itoa(i) + " out of " + strconv.FormatInt(totalCouchRows, 10))
+
+					if innerTables != nil {
+						if len(innerTables) > 0 {
+
+							innertableSelected, _, _ := linq.From(innerTables).First()
+							innerTables = pop(innerTables)
+							innerTable := innertableSelected.(InnerProcess)
+
+							tableToProcess, _, _ := linq.From(tables.Tables).Where(
+								func(in linq.T) (bool, error) { return in.(Table).PGName == innerTable.PGTableName, nil }).First()
+
+							table = tableToProcess.(Table)
+							fmt.Println("Inner table " + table.CouchName)
+
+							goto ContinueInnerTablesInsert
+						}
+					}
 				}
 
 			} else {
@@ -642,6 +662,8 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 
 					fmt.Println("Got value for key :" + updateId)
 					js, _ := simplejson.NewJson([]byte(strQuoted))
+
+				ContinueInnerTablesUpdate:
 
 					var updateQuery = table.PGUpdate
 					//file.WriteString("Iterating change coumns " + "\n")
@@ -785,6 +807,23 @@ func UpdateC2PG(dbname, user, password, host, couchHost, couchPool, couchBucket,
 							}
 						}
 					}
+
+					if innerTables != nil {
+						if len(innerTables) > 0 {
+
+							innertableSelected, _, _ := linq.From(innerTables).First()
+							innerTables = pop(innerTables)
+							innerTable := innertableSelected.(InnerProcess)
+
+							tableToProcess, _, _ := linq.From(tables.Tables).Where(
+								func(in linq.T) (bool, error) { return in.(Table).PGName == innerTable.PGTableName, nil }).First()
+
+							table = tableToProcess.(Table)
+							fmt.Println("Inner table " + table.CouchName)
+
+							goto ContinueInnerTablesUpdate
+						}
+					}
 				}
 			}
 		} else {
@@ -891,7 +930,7 @@ func BulkDeleteFromCouch(couchHost, couchPool, couchBucket, couchViewName string
 	bucket.Close()
 }
 
-func pop(inList []InnerProcess)(popped []InnerProcess){
+func pop(inList []InnerProcess) (popped []InnerProcess) {
 	inList = append(inList[:0], inList[1:]...)
 	return inList
 }
